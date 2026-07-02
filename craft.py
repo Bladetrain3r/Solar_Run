@@ -31,7 +31,7 @@ TUNING = {
     "air_steer": 0.35,        # steering authority multiplier while airborne
     "air_damp": 0.25,         # lateral damping multiplier while airborne
     "jump_impulse": 4.5,      # m/s vertical kick
-    "boost_lat_accel": 100.0, # m/s^2 (~30g) lateral kick, full power in air
+    "boost_lat_accel": 100.0, # m/s^2 (~10g) lateral kick, full power in air
     "boost_lat_time": 0.2,    # s, lateral boost burn
     "boost_fwd_accel": 260.0, # m/s^2 forward slam when boosting straight
     "boost_fwd_time": 0.35,   # s, forward boost burn

@@ -2,7 +2,7 @@
 
 A branching-route time-attack antigrav racer — Outrun's route-and-fork
 structure, where each solar-system body is a distinct physics regime.
-Full design & staging: [Design.md](Design.md).
+Full design & staging: [Design.md](Design.md) · decision log: [Decisions.md](Decisions.md).
 
 ## Current stage: 0 — handling on a hardcoded spline
 
