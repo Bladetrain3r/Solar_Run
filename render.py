@@ -76,14 +76,12 @@ class Renderer:
 
     # --- camera ------------------------------------------------------------
 
-    def _camera(self, track, seg_id, prev_seg, craft):
-        pos, _f, right, _u = track.frame_at_offset(
-            seg_id, craft.dist, -CAM_BACK, craft.lat, prev_seg)
+    def _camera(self, track, craft):
+        pos, _f, right, _u = track.spline.frame_at(craft.dist - CAM_BACK)
         self.cam_lat += (craft.lat * 0.45 - self.cam_lat) * 0.12
         cam_pos = pos + right * self.cam_lat + WORLD_UP * CAM_HEIGHT
-        tpos, _f2, _r2, _u2 = track.frame_at_offset(
-            seg_id, craft.dist, CAM_AHEAD, craft.lat, prev_seg)
-        f = (tpos + WORLD_UP * 2.0) - cam_pos
+        f = (track.spline.pos_at(craft.dist + CAM_AHEAD)
+             + WORLD_UP * 2.0) - cam_pos
         f = f / np.linalg.norm(f)
         r = np.cross(f, WORLD_UP)
         r = r / np.linalg.norm(r)
@@ -102,21 +100,19 @@ class Renderer:
 
     # --- scene ---------------------------------------------------------------
 
-    def draw(self, track, seg_id, prev_seg, craft, race=None, ghost_pos=None,
+    def draw(self, track, craft, race=None, ghost_pos=None,
              best_total=None, zen=False):
-        cam = self._camera(track, seg_id, prev_seg, craft)
-        primary, alt, gates = track.sample_ahead(
-            seg_id, craft.dist, DRAW_AHEAD, craft.lat, prev_seg)
+        cam = self._camera(track, craft)
+        samples, gates = track.sample_ahead(craft.dist, DRAW_AHEAD)
         self._draw_sky(cam)
-        self._draw_strip(alt, cam, craft.odometer, dim=0.25)
-        self._draw_strip(primary, cam, craft.odometer, dim=0.0,
+        self._draw_strip(samples, cam, craft.odometer,
                          scraping=craft.scraping)
         self._draw_gates(gates, cam)
         if ghost_pos is not None:
             self._draw_pod(ghost_pos, cam, alpha=110)
         self._draw_craft(craft, cam)
         self.screen.blit(self.scanlines, (0, 0))
-        self._draw_hud(track, seg_id, craft, race, best_total, zen)
+        self._draw_hud(track, craft, race, best_total, zen)
 
     def _draw_sky(self, cam):
         _cam_pos, _r, _u, f = cam
@@ -147,9 +143,8 @@ class Renderer:
             pygame.draw.circle(self.screen, (29, 51, 72), (ex, ey), 26)
             pygame.draw.circle(self.screen, (127, 168, 201), (ex - 7, ey - 7), 17)
 
-    def _draw_strip(self, samples, cam, odometer, dim=0.0, scraping=False):
-        """One ribbon strip from track samples. dim > 0 = the unchosen
-        fork branch, faded toward the sky so the choice reads at a glance."""
+    def _draw_strip(self, samples, cam, odometer, scraping=False):
+        """The ribbon, quad by quad from track samples, far to near."""
         hw = self.half_width
         edges = []
         for d_off, pos, right, flag in samples:
@@ -164,8 +159,7 @@ class Renderer:
             d0, al, ar, flag = a
             _d1, bl, br, _fl = b
             z = min(al[2], ar[2])
-            fog = min(1.0, max(0.0, z / FOG_DIST)) * 0.88 + dim
-            fog = min(fog, 0.97)
+            fog = min(1.0, max(0.0, z / FOG_DIST)) * 0.88
             phase = odometer + d0
             base = ROAD_DARK if int(phase // 10) % 2 else ROAD_LIGHT
             tint = SURFACE_FLAGS[flag][2]
@@ -183,7 +177,7 @@ class Renderer:
                 pygame.draw.polygon(self.screen,
                                     _lerp3(color, self.planet.sky_color, fog), p)
 
-            rail = (255, 150, 120) if (scraping and dim == 0) else RAIL_COLOR
+            rail = (255, 150, 120) if scraping else RAIL_COLOR
             strip(0.0, 0.03, rail)
             strip(0.97, 1.0, rail)
             if int(phase // 12) % 2 == 0:
@@ -260,7 +254,7 @@ class Renderer:
 
     # --- HUD -------------------------------------------------------------
 
-    def _draw_hud(self, track, seg_id, craft, race, best_total, zen):
+    def _draw_hud(self, track, craft, race, best_total, zen):
         kmh = int(craft.speed * 3.6)
         num = self.font_big.render(f"{kmh}", True, (235, 240, 246))
         self.screen.blit(num, (34, self.h - 150))
@@ -290,7 +284,7 @@ class Renderer:
             return
 
         # race clock cluster, top-right
-        ck = track.dist_to_next_checkpoint(seg_id, craft.dist, craft.lat)
+        ck = track.dist_to_next_checkpoint(craft.dist)
         if ck is not None:
             t = self.font_small.render(f"CKPT IN {int(ck)}m", True, TEXT_DIM)
             self.screen.blit(t, (self.w - t.get_width() - 40, 30))
@@ -298,6 +292,8 @@ class Renderer:
                                      self.planet.accent_color)
         self.screen.blit(clock, (self.w - clock.get_width() - 36, 48))
         sub = f"TOTAL {fmt_time(race.total)}"
+        if track.laps > 1:
+            sub = f"LAP {min(race.lap, track.laps)}/{track.laps} · " + sub
         if best_total is not None:
             sub += f" · BEST {fmt_time(best_total)}"
         s = self.font_small.render(sub, True, TEXT_DIM)

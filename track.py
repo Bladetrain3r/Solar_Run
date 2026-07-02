@@ -1,17 +1,16 @@
-"""Track = a directed graph of spline segments + forks + checkpoints + flags.
+"""Track = ONE closed-loop spline + checkpoints + painted surface flags.
 
-A segment is an open Catmull-Rom spline with a `next` list: one entry means
-the track continues, two means a FORK. The craft picks a branch with its
-lateral position at the split — steer left half (lat < 0) for next[0],
-right half for next[1]. Authoring convention: list the LEFT branch first.
+No forks, no segment joins — a single smooth Catmull-Rom loop, so there is
+nothing to kink and nothing to jarringly switch (forks are deferred; route
+variety = pick a track from the library before a run, or generate one).
 
-A track graph may be CYCLIC (branches rejoin, the last segment points back
-at the first) — that's what makes zen mode endless. Race mode just runs
-until a checkpoint flagged "finish" fires.
+Race = `laps` times around, Outrun clock rules; the lap line is the finish
+gate. Zen = the same loop, forever.
 
-Tracks are data: data/tracks/*.json. The engine reads them; the (future)
-editor writes them. Checkpoint positions are authored as `frac` (0..1 of
-segment length) so humans don't need to know arc lengths.
+Tracks are data: data/tracks/*.json. Checkpoints and flag ranges are
+authored as fracs (0..1 of the loop) so humans don't need arc lengths.
+random_track() builds the same data shape procedurally — a generated
+track IS a track.
 """
 
 import json
@@ -31,18 +30,8 @@ SURFACE_FLAGS = {
 }
 
 
-class Segment:
-    def __init__(self, seg_id, points, next_ids, flag, lead=None, tail=None):
-        self.id = seg_id
-        self.spline = Spline(points, closed=False, lead=lead, tail=tail)
-        self.length = self.spline.length
-        self.next = next_ids
-        self.flag = flag
-
-
 class Checkpoint:
-    def __init__(self, seg_id, dist, bonus, finish):
-        self.seg = seg_id
+    def __init__(self, dist, bonus, finish=False):
         self.dist = dist
         self.bonus = bonus
         self.finish = finish
@@ -53,179 +42,115 @@ class Track:
     def load(cls, name):
         return cls(json.loads((TRACK_DIR / f"{name}.json").read_text()), name)
 
+    @classmethod
+    def list_available(cls):
+        return sorted(p.stem for p in TRACK_DIR.glob("*.json"))
+
     def __init__(self, raw, name="unnamed"):
         self.file_name = name
         self.name = raw["name"]
         self.planet = raw["planet"]
-        self.start_segment = raw["start_segment"]
         self.start_time = raw.get("start_time", 45.0)
+        self.laps = raw.get("laps", 1)
+        self.spline = Spline(raw["points"], closed=True)
+        self.length = self.spline.length
+        self.checkpoints = [Checkpoint(c["frac"] * self.length,
+                                       c.get("bonus", 0.0))
+                            for c in raw.get("checkpoints", [])]
+        self.finish_gate = Checkpoint(0.0, 0.0, finish=True)  # the lap line
+        # painted flag ranges, in metres: (from, to, flag) — may wrap
+        self.flag_ranges = [(r["from"] * self.length, r["to"] * self.length,
+                             r["flag"]) for r in raw.get("flags", [])]
 
-        # Stitch tangents across joins: each segment's phantom endpoints
-        # come from its NEIGHBOURS' control points, so linear joins are
-        # exactly C1 (no kink, no curvature spike). At a fork the parent
-        # aims between its children (midpoint); at a rejoin the child
-        # leads from the average of its parents — author branches to
-        # diverge/arrive symmetrically and the residual kink stays small.
-        pts = {sid: np.asarray(s["points"], float)
-               for sid, s in raw["segments"].items()}
-        parents = {}
-        for sid, s in raw["segments"].items():
-            for nid in s["next"]:
-                parents.setdefault(nid, []).append(sid)
+    # --- queries -----------------------------------------------------------
 
-        self.segments = {}
-        for sid, s in raw["segments"].items():
-            lead = tail = None
-            par = parents.get(sid, [])
-            if par:
-                lead = np.mean([pts[p][-2] for p in par], axis=0)
-            nxt = s["next"]
-            if nxt:
-                tail = np.mean([pts[n][1] for n in nxt], axis=0)
-            self.segments[sid] = Segment(sid, s["points"], nxt,
-                                         s.get("flag", "normal"), lead, tail)
-        self.checkpoints = []
-        for c in raw.get("checkpoints", []):
-            seg = self.segments[c["segment"]]
-            self.checkpoints.append(Checkpoint(
-                seg.id, c["frac"] * seg.length,
-                c.get("bonus", 0.0), c.get("finish", False)))
-        self._ckpts_by_seg = {}
-        for c in self.checkpoints:
-            self._ckpts_by_seg.setdefault(c.seg, []).append(c)
-        for lst in self._ckpts_by_seg.values():
-            lst.sort(key=lambda c: c.dist)
+    def flag_at(self, dist):
+        m = dist % self.length
+        for a, b, flag in self.flag_ranges:
+            if (a <= m < b) if a <= b else (m >= a or m < b):
+                return flag
+        return "normal"
 
-    # --- graph walking -----------------------------------------------------
-
-    def choose(self, seg_id, lat):
-        """Which segment follows seg_id, given the craft's lateral position.
-        Fork rule: left half of the ribbon (lat < 0) -> next[0]."""
-        nxt = self.segments[seg_id].next
-        if not nxt:
-            return None
-        if len(nxt) == 1:
-            return nxt[0]
-        return nxt[0] if lat < 0 else nxt[1]
-
-    def advance(self, seg_id, old_dist, craft):
-        """Handle everything that happened between old_dist and craft.dist:
-        checkpoint crossings and segment transitions (incl. fork choice).
-        Mutates craft (set_segment) on transition. Returns
-        (new_seg_id, events) where events is a list of
-        ("checkpoint", Checkpoint) / ("fork", chosen_seg_id)."""
+    def advance(self, old_dist, new_dist):
+        """Everything crossed in (old_dist, new_dist] on the unwrapped
+        line: ("checkpoint", ckpt) and ("lap", n) events, in order."""
         events = []
-        lo = old_dist
-        while True:
-            seg = self.segments[seg_id]
-            hi = min(craft.dist, seg.length)
-            for c in self._ckpts_by_seg.get(seg_id, []):
-                if lo < c.dist <= hi:
-                    events.append(("checkpoint", c))
-            if craft.dist <= seg.length:
-                return seg_id, events
-            # transition: hop to the chosen next segment
-            new_id = self.choose(seg_id, craft.lat)
-            if new_id is None:  # dead end: stop at the end of the ribbon
-                craft.dist = seg.length
-                return seg_id, events
-            if len(seg.next) > 1:
-                events.append(("fork", new_id))
-            new_seg = self.segments[new_id]
-            # keep the craft's world position continuous: re-express lat
-            # in the new segment's frame (joints share a point, tangents
-            # may differ slightly)
-            _, _, right_old, _ = seg.spline.frame_at(seg.length)
-            _, _, right_new, _ = new_seg.spline.frame_at(0.0)
-            leftover = craft.dist - seg.length
-            craft.set_segment(new_seg.spline,
-                              leftover,
-                              craft.lat * float(np.dot(right_old, right_new)))
-            seg_id, lo = new_id, 0.0
+        L = self.length
+        for c in self.checkpoints:
+            k = int(old_dist // L)
+            while c.dist + k * L <= new_dist:
+                if c.dist + k * L > old_dist:
+                    events.append((c.dist + k * L, "checkpoint", c))
+                k += 1
+        k = int(old_dist // L) + 1
+        while k * L <= new_dist:
+            events.append((k * L, "lap", k))
+            k += 1
+        return [(kind, data) for _pos, kind, data in sorted(events,
+                                                            key=lambda e: e[0])]
 
-    def frame_at_offset(self, seg_id, dist, offset, lat=0.0, prev_seg=None):
-        """Frame `offset` metres ahead (or behind) of (seg_id, dist),
-        hopping segments forward via the fork rule. Behind the segment
-        start, falls back into prev_seg if given, else clamps."""
-        d = dist + offset
-        if d < 0 and prev_seg:
-            seg_id, d = prev_seg, d + self.segments[prev_seg].length
-        while d > self.segments[seg_id].length:
-            nxt = self.choose(seg_id, lat)
-            if nxt is None:
-                break
-            d -= self.segments[seg_id].length
-            seg_id = nxt
-        return self.segments[seg_id].spline.frame_at(max(0.0, d))
+    def dist_to_next_checkpoint(self, dist):
+        m = dist % self.length
+        gaps = [(c.dist - m) % self.length for c in self.checkpoints]
+        return min(gaps) if gaps else None
 
-    def dist_to_next_checkpoint(self, seg_id, dist, lat, cap=3000.0):
-        """Metres to the next checkpoint along the branch the craft is
-        currently lined up for, or None if none within cap."""
-        acc, d = 0.0, dist
-        while acc < cap:
-            seg = self.segments[seg_id]
-            for c in self._ckpts_by_seg.get(seg_id, []):
-                if c.dist > d:
-                    return acc + c.dist - d
-            acc += seg.length - d
-            nxt = self.choose(seg_id, lat)
-            if nxt is None:
-                return None
-            seg_id, d = nxt, 0.0
-        return None
+    # --- render feed --------------------------------------------------------
 
-    # --- render feed ---------------------------------------------------------
+    def sample_ahead(self, dist, span):
+        """Walk the ribbon from dist-12 to dist+span.
 
-    def sample_ahead(self, seg_id, dist, span, lat, prev_seg=None):
-        """Walk the ribbon from `dist - 12` to `dist + span`, hopping joins.
-
-        Returns (primary, alt, gates):
-          primary: [(d_off, pos, right, flag), ...] along the branch the
-                   craft is lined up for
-          alt:     same, down the OTHER branch of the first fork in the
-                   window (capped ~180 m) — so the player sees the choice
-          gates:   [(d_off, pos, right, up, checkpoint), ...] for both
+        Returns (samples, gates):
+          samples: [(d_off, pos, right, flag), ...]
+          gates:   [(d_off, pos, right, up, checkpoint), ...] — checkpoints
+                   plus the lap line (finish gate).
         """
-        primary, alt, gates = [], [], []
-        fork_state = None  # (other_seg_id, d_off at the fork)
+        samples = []
+        d_off = -12.0
+        while d_off < span:
+            d = dist + d_off
+            pos, _f, right, _u = self.spline.frame_at(d)
+            samples.append((d_off, pos, right, self.flag_at(d)))
+            d_off += 3.0 if d_off < 80 else (8.0 if d_off < 200 else 16.0)
 
-        def walk(seg_id, d, d_off, out, limit, follow_forks):
-            nonlocal fork_state
-            while d_off < limit:
-                seg = self.segments[seg_id]
-                d_clamped = min(d, seg.length)
-                pos, _f, right, up = seg.spline.frame_at(d_clamped)
-                out.append((d_off, pos, right, seg.flag))
-                for c in self._ckpts_by_seg.get(seg_id, []):
-                    step = self._step(d_off)
-                    if d_clamped <= c.dist < d_clamped + step:
-                        cpos, _cf, cright, cup = seg.spline.frame_at(c.dist)
-                        gates.append((d_off + (c.dist - d_clamped),
-                                      cpos, cright, cup, c))
-                step = self._step(d_off)
-                d += step
-                d_off += step
-                if d > seg.length:
-                    nxt = self.choose(seg_id, lat)
-                    if nxt is None:
-                        break
-                    if follow_forks and len(seg.next) > 1 and fork_state is None:
-                        other = seg.next[1] if nxt == seg.next[0] else seg.next[0]
-                        fork_state = (other, d_off)
-                    d -= seg.length
-                    seg_id = nxt
+        gates = []
+        for c in self.checkpoints + [self.finish_gate]:
+            g = (c.dist - dist) % self.length
+            if g < span:
+                pos, _f, right, up = self.spline.frame_at(c.dist)
+                gates.append((g, pos, right, up, c))
+        return samples, gates
 
-        start_seg, start_d = seg_id, dist - 12.0
-        if start_d < 0 and prev_seg:
-            start_seg, start_d = prev_seg, start_d + self.segments[prev_seg].length
-        start_d = max(0.0, start_d)
-        walk(start_seg, start_d, -12.0, primary, span, True)
-        if fork_state:
-            other, fork_off = fork_state
-            walk(other, 0.0, fork_off, alt, min(span, fork_off + 180.0), False)
-        return primary, alt, gates
 
-    @staticmethod
-    def _step(d_off):
-        """Ribbon sampling stride: fine near the camera, coarse far away."""
-        return 3.0 if d_off < 80 else (8.0 if d_off < 200 else 16.0)
+def random_track(seed=None, planet="moon"):
+    """Generate a smooth closed loop: control points laid out radially
+    around a centre (star-shaped, so it can never self-intersect), with
+    jittered radius, rolling height, and a couple of painted flag arcs."""
+    rng = np.random.default_rng(seed)
+    n = int(rng.integers(10, 15))
+    base_r = float(rng.uniform(260, 380))
+    angles = np.linspace(0, 2 * np.pi, n, endpoint=False)
+    angles += rng.uniform(-0.12, 0.12, n) * (2 * np.pi / n)
+    radii = base_r * (1.0 + rng.uniform(-0.22, 0.35, n))
+    heights = rng.uniform(-1, 1, n)
+    for _ in range(2):  # smooth the height walk so slopes stay gentle
+        heights = (heights + np.roll(heights, 1) + np.roll(heights, -1)) / 3.0
+    heights *= float(rng.uniform(10, 22))
+
+    points = [[float(r * np.cos(a)), float(r * np.sin(a)), float(h)]
+              for a, r, h in zip(angles, radii, heights)]
+
+    f1 = float(rng.uniform(0.15, 0.55))
+    f2 = float(rng.uniform(0.6, 0.9))
+    raw = {
+        "name": f"Random {seed if seed is not None else '??'}",
+        "planet": planet,
+        "laps": 1,
+        "points": points,
+        "checkpoints": [{"frac": 0.33, "bonus": 15.0},
+                        {"frac": 0.66, "bonus": 12.0}],
+        "flags": [{"from": f1, "to": f1 + 0.08, "flag": "low_grip"},
+                  {"from": f2, "to": f2 + 0.06, "flag": "boost"}],
+    }
+    t = Track(raw, name=f"random-{seed}")
+    t.start_time = round(t.length / 75.0 + 10.0)  # generous; tune later
+    return t

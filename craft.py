@@ -70,17 +70,6 @@ class Craft:
         self.surface_grip = 1.0  # multipliers from the segment's surface
         self.surface_accel = 0.0 # flag; set each frame by main from track
 
-    def set_segment(self, spline, dist, lat=None):
-        """Hop to a new track segment, keeping motion state continuous.
-        Track.advance calls this at joins/forks."""
-        self.spline = spline
-        self.dist = dist
-        if lat is not None:
-            self.lat = lat
-        # re-anchor vertically: same height above the NEW ribbon, so a
-        # join never reads as a bump or a vz spike
-        self.world_z = float(spline.pos_at(dist)[2]) + self.alt
-
     def update(self, dt, throttle, brake, steer, jump, boost=False):
         """Advance one frame. throttle/brake in [0,1], steer in [-1,1],
         jump held (only fires when grounded), boost edge-triggered

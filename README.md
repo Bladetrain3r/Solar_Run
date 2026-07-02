@@ -4,22 +4,25 @@ A branching-route time-attack antigrav racer — Outrun's route-and-fork
 structure, where each solar-system body is a distinct physics regime.
 Full design & staging: [Design.md](Design.md) · decision log: [Decisions.md](Decisions.md).
 
-## Current stage: 1 — routes, forks, the clock, the ghost
+## Current stage: 1 — single-spline routes, the clock, the ghost
+
+Tracks are one smooth closed loop each (forks deferred — no joins, nothing
+to kink). Pick a stage from the menu, or RANDOM for a generated layout.
 
 **Race** (default): Outrun rules — time on the clock, checkpoints add more,
-the finish gate ends the run. Steer into a fork's side to pick the branch
-(left = the low-grip shortcut, right = the safe dip route). Your best run
-is saved as a ghost and races alongside you next time.
+completing the lap ends the run. Your best run is saved as a ghost and
+races alongside you next time.
 
-**Zen** (`--zen`): no clock, no fail state — the track graph is cyclic,
-just drive forever.
+**Zen** (Z in the menu): no clock, no fail state — just drive laps forever.
 
 ## Run
 
 ```
 pip install -r requirements.txt
-python3 main.py          # race
-python3 main.py --zen    # zen roaming
+python3 main.py                    # stage-select menu
+python3 main.py --track moon_b1    # straight into a track
+python3 main.py --random 42        # generated layout (seeded)
+python3 main.py --zen --random     # zen on a fresh random loop
 ```
 
 | Key | Action |
@@ -44,17 +47,19 @@ Headless smoke test: `python3 main.py --smoke 300 [screenshot.png]`
   the final hairpin.
 - `data/planets/moon.json`: gravity / drag / grip — gameplay-scaled numbers,
   relative feel between bodies is what matters.
-- `data/tracks/moon_a1.json`: the track — segment graph, fork topology,
-  surface flags, checkpoint fracs/bonuses, start_time.
+- `data/tracks/*.json`: the library — loop points, checkpoint fracs +
+  bonuses, painted flag ranges, laps, start_time. Add a JSON, it's in
+  the menu.
 
 ## Module map
 
 ```
 main.py    game loop; owns window/input/mode; wires craft+track+timer+render
+menu.py    stage select: library + RANDOM, race/zen toggle
 spline.py  Catmull-Rom + arc-length table; distance-based queries
 craft.py   handling model; ribbon-space state; reads planet profile
 planet.py  physics-profile data loader (data/planets/*.json)
-track.py   segment graph + forks + checkpoints + flags; JSON I/O; render feed
+track.py   one closed loop + checkpoints + flags; JSON I/O; random generator
 timer.py   race clock (Outrun rules) + ghost record/replay/persist
 render.py  software 3D chase-cam renderer — thin, swappable seam
 ```

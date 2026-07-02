@@ -1,9 +1,9 @@
 """Race state and the ghost — the opponent is the clock and your last self.
 
 Outrun rules: you start with time on the clock, checkpoints add more,
-the checkpoint flagged "finish" ends the run. Clock hits zero first =
-run over. The ghost is a recording of (segment, dist, lat, alt) per frame;
-the best finished run is saved to data/ghosts/ and replayed next session.
+completing the final lap ends the run. Clock hits zero first = run over.
+The ghost is a recording of (dist, lat, alt) per frame; the best finished
+run is saved to data/ghosts/ and replayed next session.
 """
 
 import json
@@ -19,6 +19,7 @@ class RaceState:
     def __init__(self, start_time):
         self.remaining = start_time
         self.total = 0.0
+        self.lap = 1
         self.state = RUNNING
 
     def update(self, dt):
@@ -30,11 +31,12 @@ class RaceState:
             self.remaining = 0.0
             self.state = TIMEOUT
 
-    def checkpoint(self, ckpt):
-        if self.state != RUNNING:
-            return
-        self.remaining += ckpt.bonus
-        if ckpt.finish:
+    def checkpoint(self, bonus):
+        if self.state == RUNNING:
+            self.remaining += bonus
+
+    def finish(self):
+        if self.state == RUNNING:
             self.state = FINISHED
 
 
@@ -45,12 +47,12 @@ class GhostRecorder:
 
     def __init__(self):
         self.times = []
-        self.frames = []  # (seg_id, dist, lat, alt)
+        self.frames = []  # (dist, lat, alt)
 
-    def record(self, t, seg_id, dist, lat, alt):
+    def record(self, t, dist, lat, alt):
         if len(self.times) < self.MAX_FRAMES:
             self.times.append(t)
-            self.frames.append((seg_id, dist, lat, alt))
+            self.frames.append((dist, lat, alt))
 
 
 class GhostPlayer:
@@ -89,7 +91,7 @@ def save_ghost_if_best(track_file_name, recorder, total, current_best):
     ghost_path(track_file_name).write_text(json.dumps({
         "total": total,
         "times": [round(t, 4) for t in recorder.times],
-        "frames": [[s, round(d, 2), round(l, 2), round(a, 2)]
-                   for s, d, l, a in recorder.frames],
+        "frames": [[round(d, 2), round(l, 2), round(a, 2)]
+                   for d, l, a in recorder.frames],
     }))
     return True

@@ -62,28 +62,30 @@ still open. Append entries; don't rewrite history — supersede it.
 
 ## Decided (Stage 1)
 
-- **D-010 · Track = directed graph of open-spline segments**, may be
-  CYCLIC (branches rejoin; last segment points back at the first). Race
-  mode runs start → finish gate; zen mode exploits the cycle to run
-  forever. One data model, two modes.
-- **D-011 · Fork choice = lateral position at the split.** Left half of
-  the ribbon (lat < 0) takes `next[0]`. Authoring convention: list the
-  LEFT branch first. Forks and steering are the same mechanic — no
-  special input.
+- **D-010 · ~~Track = directed graph of open-spline segments~~**
+  SUPERSEDED by D-019.
+- **D-011 · ~~Fork choice = lateral position at the split~~**
+  SUPERSEDED by D-019 — even with C1-stitched joins and diverging
+  branches, the rendered route SNAPS between branches as your lateral
+  position crosses the centreline near a fork. Jarring, inherent to
+  lat-as-choice rendering, not worth polishing pre-MVP.
 - **D-012 · ~~Segment joins use reflected phantom endpoints~~**
   SUPERSEDED by D-017 — reflection kinked the joins (ragged render,
   curvature spike shoved you into the rail = felt like losing accel).
-- **D-017 · Joins are graph-stitched**: each segment's phantom endpoints
-  come from its neighbours' actual control points (parent's penultimate /
-  child's second; averaged at forks and rejoins). Linear joins are exactly
-  C1; fork joints keep a small residual kink (~25° — geometrically
-  unavoidable when one point feeds two diverging curves), minimised by
-  authoring branches symmetric about the arrival direction. Craft lat is
-  re-projected and altitude re-anchored at every hop, so a join is never
-  a bump.
-- **D-018 · Fork branches must diverge decisively** (authoring rule):
-  opposite-ish initial directions, ribbons fully separated within ~30 m.
-  Overlapping near-parallel branches are unreadable at speed.
+- **D-017 · ~~Joins are graph-stitched~~** (C1 phantom stitching) —
+  worked for linear joins, but moot once D-019 removed joins entirely.
+  Spline still accepts lead/tail phantoms; the multi-segment graph
+  implementation lives in git history (commits a342c1c..8c38468) if
+  forks return post-MVP.
+- **D-018 · ~~Fork branches must diverge decisively~~** — moot per D-019.
+- **D-019 · MVP tracks are ONE closed-loop spline. Forks are deferred.**
+  Nothing to join = nothing to kink or snap. Route variety comes from
+  (a) a LIBRARY of tracks picked in the stage-select menu before a run,
+  (b) RANDOM — a procedural generator (radial star-shaped layout: never
+  self-intersects, always smooth) that emits the same track-data shape.
+  Race = laps around the loop (lap line = finish gate); checkpoints and
+  surface flags are painted as fracs of the loop. Forks may return
+  post-MVP as pre-run route selection rather than mid-ribbon switches.
 - **D-013 · Outrun clock rules**: start with time, checkpoints add time,
   zero = run over, "finish"-flagged checkpoint ends the run. All numbers
   live in the track JSON (start_time, per-checkpoint bonus).
@@ -102,13 +104,17 @@ still open. Append entries; don't rewrite history — supersede it.
 - **O-003 · Race countdown/start gate** — currently the clock just runs
   from frame one. Fine until times get competitive.
 - **O-004 · Ghost delta readout** (the wireframe's `GHOST +0.82`) —
-  needs "ghost progress at my progress" mapping across the graph; do it
-  when it earns its keep.
-- **O-005 · moon_a1 pacing**: start_time 40 + bonuses is deliberately
-  generous. Tighten in JSON once real lap times exist.
-- **O-006 · Fork presence**: a divider marker / signage at the split
-  would make the choice read from further out than the ribbon geometry
-  alone. Decoration-adjacent — polish, not MVP.
+  trivial now on a single loop (compare dist at same t); do it when it
+  earns its keep.
+- **O-005 · Track pacing**: start_times + bonuses deliberately generous
+  (random tracks estimate theirs from length). Tighten once real lap
+  times exist.
+- **O-006 · ~~Fork presence~~** — moot per D-019.
+- **O-007 · Zen procgen-on-the-go**: random_track proves generated
+  layouts work; endless zen = synthesizing the loop ahead while
+  retiring it behind. Post-MVP.
+- **O-008 · Random-track ghosts**: not persisted (each seed is
+  one-off). Could persist per-seed with a seed picker later.
 
 ## Next
 
