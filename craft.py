@@ -77,6 +77,9 @@ class Craft:
         self.dist = dist
         if lat is not None:
             self.lat = lat
+        # re-anchor vertically: same height above the NEW ribbon, so a
+        # join never reads as a bump or a vz spike
+        self.world_z = float(spline.pos_at(dist)[2]) + self.alt
 
     def update(self, dt, throttle, brake, steer, jump, boost=False):
         """Advance one frame. throttle/brake in [0,1], steer in [-1,1],

@@ -108,7 +108,7 @@ class Renderer:
         primary, alt, gates = track.sample_ahead(
             seg_id, craft.dist, DRAW_AHEAD, craft.lat, prev_seg)
         self._draw_sky(cam)
-        self._draw_strip(alt, cam, craft.odometer, dim=0.45)
+        self._draw_strip(alt, cam, craft.odometer, dim=0.25)
         self._draw_strip(primary, cam, craft.odometer, dim=0.0,
                          scraping=craft.scraping)
         self._draw_gates(gates, cam)

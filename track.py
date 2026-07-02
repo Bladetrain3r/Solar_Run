@@ -32,9 +32,9 @@ SURFACE_FLAGS = {
 
 
 class Segment:
-    def __init__(self, seg_id, points, next_ids, flag):
+    def __init__(self, seg_id, points, next_ids, flag, lead=None, tail=None):
         self.id = seg_id
-        self.spline = Spline(points, closed=False)
+        self.spline = Spline(points, closed=False, lead=lead, tail=tail)
         self.length = self.spline.length
         self.next = next_ids
         self.flag = flag
@@ -59,10 +59,31 @@ class Track:
         self.planet = raw["planet"]
         self.start_segment = raw["start_segment"]
         self.start_time = raw.get("start_time", 45.0)
-        self.segments = {
-            sid: Segment(sid, s["points"], s["next"], s.get("flag", "normal"))
-            for sid, s in raw["segments"].items()
-        }
+
+        # Stitch tangents across joins: each segment's phantom endpoints
+        # come from its NEIGHBOURS' control points, so linear joins are
+        # exactly C1 (no kink, no curvature spike). At a fork the parent
+        # aims between its children (midpoint); at a rejoin the child
+        # leads from the average of its parents — author branches to
+        # diverge/arrive symmetrically and the residual kink stays small.
+        pts = {sid: np.asarray(s["points"], float)
+               for sid, s in raw["segments"].items()}
+        parents = {}
+        for sid, s in raw["segments"].items():
+            for nid in s["next"]:
+                parents.setdefault(nid, []).append(sid)
+
+        self.segments = {}
+        for sid, s in raw["segments"].items():
+            lead = tail = None
+            par = parents.get(sid, [])
+            if par:
+                lead = np.mean([pts[p][-2] for p in par], axis=0)
+            nxt = s["next"]
+            if nxt:
+                tail = np.mean([pts[n][1] for n in nxt], axis=0)
+            self.segments[sid] = Segment(sid, s["points"], nxt,
+                                         s.get("flag", "normal"), lead, tail)
         self.checkpoints = []
         for c in raw.get("checkpoints", []):
             seg = self.segments[c["segment"]]

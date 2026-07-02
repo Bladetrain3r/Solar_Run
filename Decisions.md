@@ -70,11 +70,20 @@ still open. Append entries; don't rewrite history — supersede it.
   the ribbon (lat < 0) takes `next[0]`. Authoring convention: list the
   LEFT branch first. Forks and steering are the same mechanic — no
   special input.
-- **D-012 · Segment joins use reflected phantom endpoints** (local,
-  per-segment) rather than cross-segment tangent stitching. Curvature
-  flattens slightly at joints; the editor's job is to author smooth
-  joins. Craft lat is re-projected into the new segment's frame at the
-  hop, so world position stays continuous.
+- **D-012 · ~~Segment joins use reflected phantom endpoints~~**
+  SUPERSEDED by D-017 — reflection kinked the joins (ragged render,
+  curvature spike shoved you into the rail = felt like losing accel).
+- **D-017 · Joins are graph-stitched**: each segment's phantom endpoints
+  come from its neighbours' actual control points (parent's penultimate /
+  child's second; averaged at forks and rejoins). Linear joins are exactly
+  C1; fork joints keep a small residual kink (~25° — geometrically
+  unavoidable when one point feeds two diverging curves), minimised by
+  authoring branches symmetric about the arrival direction. Craft lat is
+  re-projected and altitude re-anchored at every hop, so a join is never
+  a bump.
+- **D-018 · Fork branches must diverge decisively** (authoring rule):
+  opposite-ish initial directions, ribbons fully separated within ~30 m.
+  Overlapping near-parallel branches are unreadable at speed.
 - **D-013 · Outrun clock rules**: start with time, checkpoints add time,
   zero = run over, "finish"-flagged checkpoint ends the run. All numbers
   live in the track JSON (start_time, per-checkpoint bonus).
@@ -97,6 +106,9 @@ still open. Append entries; don't rewrite history — supersede it.
   when it earns its keep.
 - **O-005 · moon_a1 pacing**: start_time 40 + bonuses is deliberately
   generous. Tighten in JSON once real lap times exist.
+- **O-006 · Fork presence**: a divider marker / signage at the split
+  would make the choice read from further out than the ribbon geometry
+  alone. Decoration-adjacent — polish, not MVP.
 
 ## Next
 

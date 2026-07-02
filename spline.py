@@ -17,13 +17,15 @@ class Spline:
     """Uniform Catmull-Rom through control points, with a distance->t table.
 
     closed=True wraps the curve into a loop (racing circuit).
-    closed=False spans ALL the given points (P0..Pn) by adding reflected
-    phantom endpoints — used for track segments that join other segments.
-    samples_per_seg controls arc-length table resolution; 32 is plenty
-    for metre-accurate queries on track-scale geometry.
+    closed=False spans ALL the given points (P0..Pn) using phantom
+    endpoints: pass lead/tail (a neighbouring segment's control point) to
+    make tangents CONTINUOUS across a join, or leave None for a reflected
+    default. samples_per_seg controls arc-length table resolution; 32 is
+    plenty for metre-accurate queries on track-scale geometry.
     """
 
-    def __init__(self, points, closed=True, samples_per_seg=32):
+    def __init__(self, points, closed=True, samples_per_seg=32,
+                 lead=None, tail=None):
         self.points = np.asarray(points, dtype=float)
         if self.points.ndim != 2 or self.points.shape[1] != 3:
             raise ValueError("points must be an (N, 3) array")
@@ -34,8 +36,10 @@ class Spline:
             self._ext = self.points
             self.n_segs = len(self.points)
         else:
-            lead = 2.0 * self.points[0] - self.points[1]
-            tail = 2.0 * self.points[-1] - self.points[-2]
+            if lead is None:
+                lead = 2.0 * self.points[0] - self.points[1]
+            if tail is None:
+                tail = 2.0 * self.points[-1] - self.points[-2]
             self._ext = np.vstack([lead, self.points, tail])
             self.n_segs = len(self.points) - 1
         self._build_arc_table(samples_per_seg)
