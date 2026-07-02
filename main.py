@@ -1,20 +1,24 @@
-"""Solar Run — Stage 0: handling on a hardcoded spline.
+"""Solar Run — Stage 1: routes, forks, the clock, the ghost.
 
-A grey capsule on a grey ribbon over the Moon. No editor, no forks, no
-terrain yet — this stage exists to make the fling feel GOOD. Iterate
-craft.TUNING (and the planet JSON) longest.
+Race mode (default): Outrun rules — start with time on the clock,
+checkpoints add more, the finish gate ends the run. Steer into a fork's
+side to choose it. Your best finished run is saved as a ghost and races
+alongside you next time.
+
+Zen mode (--zen): no clock, no ghost, no fail state — the track graph is
+cyclic, so just drive. Forever.
 
 Controls:
     W / Up        thrust
     S / Down      brake
-    A,D / L,R     steer
+    A,D / L,R     steer (also picks the branch at a fork)
     Space         jump
     Shift (tap)   boost — lateral kick in your steer direction,
                   forward slam if steering neutral; works airborne
-    R             reset to start
+    R             restart run / reset
     Esc           quit
 
-Smoke test (headless):  python3 main.py --smoke 300 [screenshot.png]
+Smoke test (headless):  python3 main.py --smoke 300 [screenshot.png] [--zen]
 """
 
 import sys
@@ -24,26 +28,12 @@ import pygame
 from craft import Craft, TUNING
 from planet import Planet
 from render import Renderer
-from spline import Spline
-
-# The hardcoded Stage-0 circuit: a ~1.5 km closed loop with a climbing
-# sweeper, a crest you can launch off, and a dip. (x, y, height) in metres.
-TRACK_POINTS = [
-    (0, 0, 0),
-    (140, -20, 0),
-    (280, 0, 4),
-    (380, 80, 10),
-    (400, 200, 16),     # crest — carry speed here for airtime
-    (340, 310, 6),
-    (200, 360, 0),
-    (60, 340, -6),      # the dip
-    (-60, 260, -2),
-    (-140, 140, 6),
-    (-160, 20, 2),
-    (-90, -40, 0),
-]
+from timer import (RaceState, GhostRecorder, load_ghost, save_ghost_if_best,
+                   RUNNING)
+from track import Track, SURFACE_FLAGS
 
 WIDTH, HEIGHT = 1280, 720
+TRACK_NAME = "moon_a1"
 
 
 def read_input(keys):
@@ -59,23 +49,44 @@ def read_input(keys):
 
 
 def main():
+    args = sys.argv[1:]
+    zen = "--zen" in args
+    args = [a for a in args if a != "--zen"]
     smoke_frames = 0
     shot_path = None
-    if len(sys.argv) > 1 and sys.argv[1] == "--smoke":
-        smoke_frames = int(sys.argv[2]) if len(sys.argv) > 2 else 300
-        shot_path = sys.argv[3] if len(sys.argv) > 3 else None
+    if args and args[0] == "--smoke":
+        smoke_frames = int(args[1]) if len(args) > 1 else 300
+        shot_path = args[2] if len(args) > 2 else None
         import os
         os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Solar Run — Stage 0 (Moon)")
+    pygame.display.set_caption("Solar Run — Stage 1 (Moon)")
     clock = pygame.time.Clock()
 
-    planet = Planet.load("moon")
-    spline = Spline(TRACK_POINTS, closed=True)
-    craft = Craft(spline, planet)
+    track = Track.load(TRACK_NAME)
+    planet = Planet.load(track.planet)
     renderer = Renderer(screen, planet, TUNING["ribbon_half_width"])
+
+    seg_id = track.start_segment
+    prev_seg = None
+    craft = Craft(track.segments[seg_id].spline, planet)
+    race = None if zen else RaceState(track.start_time)
+    ghost = None if zen else load_ghost(TRACK_NAME)
+    recorder = None if zen else GhostRecorder()
+    ghost_saved = False
+
+    def restart():
+        nonlocal seg_id, prev_seg, race, recorder, ghost, ghost_saved
+        seg_id, prev_seg = track.start_segment, None
+        craft.spline = track.segments[seg_id].spline
+        craft.reset()
+        if not zen:
+            race = RaceState(track.start_time)
+            recorder = GhostRecorder()
+            ghost = load_ghost(TRACK_NAME)
+            ghost_saved = False
 
     frame = 0
     running = True
@@ -91,7 +102,7 @@ def main():
                 if ev.key == pygame.K_ESCAPE:
                     running = False
                 elif ev.key == pygame.K_r:
-                    craft.reset()
+                    restart()
                 elif ev.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
                     boost = True
 
@@ -104,17 +115,53 @@ def main():
         else:
             throttle, brake, steer, jump = read_input(pygame.key.get_pressed())
 
+        if race is not None and race.state != RUNNING:
+            throttle, jump, boost = 0.0, False, False  # coast out the run
+
+        # surface flag of the segment under the craft
+        grip_mult, accel_add, _tint = SURFACE_FLAGS[track.segments[seg_id].flag]
+        craft.surface_grip, craft.surface_accel = grip_mult, accel_add
+
+        old_dist = craft.dist
         craft.update(dt, throttle, brake, steer, jump, boost)
-        renderer.draw(spline, craft)
+        new_seg, events = track.advance(seg_id, old_dist, craft)
+        if new_seg != seg_id:
+            prev_seg, seg_id = seg_id, new_seg
+
+        ghost_pos = None
+        if race is not None:
+            race.update(dt)
+            for kind, data in events:
+                if kind == "checkpoint":
+                    race.checkpoint(data)
+            if race.state == RUNNING:
+                recorder.record(race.total, seg_id, craft.dist,
+                                craft.lat, craft.alt)
+            elif race.state == "finished" and not ghost_saved:
+                best = ghost.total if ghost else None
+                if save_ghost_if_best(TRACK_NAME, recorder, race.total, ghost):
+                    print(f"ghost saved: {race.total:.1f}s"
+                          + (f" (was {best:.1f}s)" if best else ""))
+                ghost_saved = True
+            if ghost is not None:
+                pose = ghost.sample(race.total)
+                if pose is not None:
+                    g_seg, g_dist, g_lat, g_alt = pose
+                    gp, _f, gr, gu = track.segments[g_seg].spline.frame_at(g_dist)
+                    ghost_pos = gp + gr * g_lat + gu * g_alt
+
+        renderer.draw(track, seg_id, prev_seg, craft, race, ghost_pos,
+                      ghost.total if ghost else None, zen)
         pygame.display.flip()
 
         frame += 1
         if smoke_frames and frame >= smoke_frames:
             if shot_path:
                 pygame.image.save(screen, shot_path)
-            print(f"smoke ok: {frame} frames | dist {craft.dist:.1f}m | "
-                  f"speed {craft.speed * 3.6:.0f} km/h | lat {craft.lat:+.1f}m | "
-                  f"track {spline.length:.0f}m")
+            state = race.state if race else "zen"
+            print(f"smoke ok: {frame} frames | seg {seg_id} | "
+                  f"dist {craft.dist:.1f}m | odo {craft.odometer:.0f}m | "
+                  f"speed {craft.speed * 3.6:.0f} km/h | {state}")
             running = False
 
     pygame.quit()

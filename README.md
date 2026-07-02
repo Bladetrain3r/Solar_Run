@@ -4,17 +4,22 @@ A branching-route time-attack antigrav racer — Outrun's route-and-fork
 structure, where each solar-system body is a distinct physics regime.
 Full design & staging: [Design.md](Design.md) · decision log: [Decisions.md](Decisions.md).
 
-## Current stage: 0 — handling on a hardcoded spline
+## Current stage: 1 — routes, forks, the clock, the ghost
 
-A grey capsule on a grey ribbon over the Moon. One ~1.5 km closed loop with
-a climbing sweeper, a crest you can launch off, and a dip. This stage exists
-to make the fling feel good — everything else waits on that.
+**Race** (default): Outrun rules — time on the clock, checkpoints add more,
+the finish gate ends the run. Steer into a fork's side to pick the branch
+(left = the low-grip shortcut, right = the safe dip route). Your best run
+is saved as a ghost and races alongside you next time.
+
+**Zen** (`--zen`): no clock, no fail state — the track graph is cyclic,
+just drive forever.
 
 ## Run
 
 ```
 pip install -r requirements.txt
-python3 main.py
+python3 main.py          # race
+python3 main.py --zen    # zen roaming
 ```
 
 | Key | Action |
@@ -39,15 +44,17 @@ Headless smoke test: `python3 main.py --smoke 300 [screenshot.png]`
   the final hairpin.
 - `data/planets/moon.json`: gravity / drag / grip — gameplay-scaled numbers,
   relative feel between bodies is what matters.
-- `main.py` → `TRACK_POINTS`: the hardcoded circuit (3D control points the
-  spline threads through).
+- `data/tracks/moon_a1.json`: the track — segment graph, fork topology,
+  surface flags, checkpoint fracs/bonuses, start_time.
 
 ## Module map
 
 ```
-main.py    game loop; owns window/input; hardcoded Stage-0 track
+main.py    game loop; owns window/input/mode; wires craft+track+timer+render
 spline.py  Catmull-Rom + arc-length table; distance-based queries
 craft.py   handling model; ribbon-space state; reads planet profile
 planet.py  physics-profile data loader (data/planets/*.json)
+track.py   segment graph + forks + checkpoints + flags; JSON I/O; render feed
+timer.py   race clock (Outrun rules) + ghost record/replay/persist
 render.py  software 3D chase-cam renderer — thin, swappable seam
 ```

@@ -1,0 +1,32 @@
+{
+  "name": "Moon A-1",
+  "planet": "moon",
+  "start_segment": "start",
+  "start_time": 40.0,
+  "segments": {
+    "start": {
+      "points": [[0, 0, 0], [140, -20, 0], [280, 0, 4], [380, 80, 10],
+                 [400, 200, 16], [340, 310, 6]],
+      "next": ["cut", "dip"]
+    },
+    "cut": {
+      "points": [[340, 310, 6], [210, 290, 10], [40, 215, 9], [-140, 140, 6]],
+      "next": ["close"],
+      "flag": "low_grip"
+    },
+    "dip": {
+      "points": [[340, 310, 6], [200, 360, 0], [60, 340, -6], [-60, 260, -2],
+                 [-140, 140, 6]],
+      "next": ["close"]
+    },
+    "close": {
+      "points": [[-140, 140, 6], [-160, 20, 2], [-90, -40, 0], [0, 0, 0]],
+      "next": ["start"]
+    }
+  },
+  "checkpoints": [
+    {"segment": "start", "frac": 0.5, "bonus": 15.0},
+    {"segment": "close", "frac": 0.1, "bonus": 12.0},
+    {"segment": "close", "frac": 0.85, "finish": true}
+  ]
+}

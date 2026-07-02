@@ -66,6 +66,17 @@ class Craft:
         self.boost_dir = 0       # -1/+1 lateral, 0 = forward
         self.boost_cd = 0.0      # cooldown remaining
         self.boosting = False
+        self.odometer = 0.0      # lifetime metres (render stripe phase)
+        self.surface_grip = 1.0  # multipliers from the segment's surface
+        self.surface_accel = 0.0 # flag; set each frame by main from track
+
+    def set_segment(self, spline, dist, lat=None):
+        """Hop to a new track segment, keeping motion state continuous.
+        Track.advance calls this at joins/forks."""
+        self.spline = spline
+        self.dist = dist
+        if lat is not None:
+            self.lat = lat
 
     def update(self, dt, throttle, brake, steer, jump, boost=False):
         """Advance one frame. throttle/brake in [0,1], steer in [-1,1],
@@ -86,6 +97,7 @@ class Craft:
 
         # --- longitudinal: thrust vs brake vs bleed ---
         accel = t["thrust_accel"] * throttle - t["brake_decel"] * brake
+        accel += self.surface_accel                           # boost pads
         if boosting and self.boost_dir == 0:
             accel += t["boost_fwd_accel"]
         accel -= t["base_damp"] * self.speed                  # engine losses
@@ -101,7 +113,7 @@ class Craft:
                        * self.speed ** 2 * t["centrifugal_scale"])
 
         # Steering is lateral thrust; grip is how hard the field can shove.
-        grip = self.planet.grip
+        grip = self.planet.grip * self.surface_grip
         steer_authority = grip * (1.0 if self.grounded else t["air_steer"])
         damp = t["lat_damp"] * grip * (1.0 if self.grounded else t["air_damp"])
 
@@ -126,6 +138,7 @@ class Craft:
         # --- advance along the track ---
         ribbon_z_old = float(self.spline.pos_at(self.dist)[2])
         self.dist += self.speed * dt
+        self.odometer += self.speed * dt
         ribbon_z_new = float(self.spline.pos_at(self.dist)[2])
 
         # --- vertical: one unified model. vz always integrates gravity;

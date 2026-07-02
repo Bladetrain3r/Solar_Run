@@ -60,9 +60,47 @@ still open. Append entries; don't rewrite history — supersede it.
 - **O-002 · All tuning provisional** until routes + clock exist — corner
   caps only mean something against a checkpoint timer.
 
+## Decided (Stage 1)
+
+- **D-010 · Track = directed graph of open-spline segments**, may be
+  CYCLIC (branches rejoin; last segment points back at the first). Race
+  mode runs start → finish gate; zen mode exploits the cycle to run
+  forever. One data model, two modes.
+- **D-011 · Fork choice = lateral position at the split.** Left half of
+  the ribbon (lat < 0) takes `next[0]`. Authoring convention: list the
+  LEFT branch first. Forks and steering are the same mechanic — no
+  special input.
+- **D-012 · Segment joins use reflected phantom endpoints** (local,
+  per-segment) rather than cross-segment tangent stitching. Curvature
+  flattens slightly at joints; the editor's job is to author smooth
+  joins. Craft lat is re-projected into the new segment's frame at the
+  hop, so world position stays continuous.
+- **D-013 · Outrun clock rules**: start with time, checkpoints add time,
+  zero = run over, "finish"-flagged checkpoint ends the run. All numbers
+  live in the track JSON (start_time, per-checkpoint bonus).
+- **D-014 · Ghost = best finished run**, recorded as (segment, dist, lat,
+  alt) per frame, persisted to data/ghosts/ (gitignored — player data).
+  Precise live delta readout deferred; the ghost pod itself is the delta.
+- **D-015 · Surface flags are physics + tint**: low_grip halves grip
+  (icy blue), boost adds accel (amber). Defined once in
+  `track.SURFACE_FLAGS`; craft gets them as plain multipliers.
+- **D-016 · Zen mode** (`--zen`): no clock, no ghost, no fail state.
+  Same track data. Later: procgen = synthesizing segments on the fly
+  instead of loading them — the graph model already supports it.
+
+## Open (Stage 1)
+
+- **O-003 · Race countdown/start gate** — currently the clock just runs
+  from frame one. Fine until times get competitive.
+- **O-004 · Ghost delta readout** (the wireframe's `GHOST +0.82`) —
+  needs "ghost progress at my progress" mapping across the graph; do it
+  when it earns its keep.
+- **O-005 · moon_a1 pacing**: start_time 40 + bonuses is deliberately
+  generous. Tighten in JSON once real lap times exist.
+
 ## Next
 
-**Stage 1 — route structure**: fork topology in `spline.py`, `track.py`
-(splines + forks + checkpoints + flags + progress), `timer.py` (clock,
-checkpoint pass/fail, ghost). Done when: drive a branching route, pick a
-fork by steering into it, beat the clock, race your ghost.
+**Stage 2 — the editor**: place/drag control points top-down, side-view
+height, branch a node, paint surface flags, place checkpoints, ONE save
+slot. Scope guard per Design.md: NO undo, multi-track, copy-paste, or
+grid-snap in v1.

@@ -17,6 +17,8 @@ class Spline:
     """Uniform Catmull-Rom through control points, with a distance->t table.
 
     closed=True wraps the curve into a loop (racing circuit).
+    closed=False spans ALL the given points (P0..Pn) by adding reflected
+    phantom endpoints — used for track segments that join other segments.
     samples_per_seg controls arc-length table resolution; 32 is plenty
     for metre-accurate queries on track-scale geometry.
     """
@@ -25,28 +27,42 @@ class Spline:
         self.points = np.asarray(points, dtype=float)
         if self.points.ndim != 2 or self.points.shape[1] != 3:
             raise ValueError("points must be an (N, 3) array")
-        if len(self.points) < 4:
-            raise ValueError("need at least 4 control points")
+        if len(self.points) < (4 if closed else 2):
+            raise ValueError("not enough control points")
         self.closed = closed
-        self.n_segs = len(self.points) if closed else len(self.points) - 3
+        if closed:
+            self._ext = self.points
+            self.n_segs = len(self.points)
+        else:
+            lead = 2.0 * self.points[0] - self.points[1]
+            tail = 2.0 * self.points[-1] - self.points[-2]
+            self._ext = np.vstack([lead, self.points, tail])
+            self.n_segs = len(self.points) - 1
         self._build_arc_table(samples_per_seg)
 
     # --- raw parameter-space evaluation -----------------------------------
 
     def _seg_points(self, seg):
         """The 4 control points governing segment `seg` (curve runs p1->p2)."""
-        n = len(self.points)
+        n = len(self._ext)
         if self.closed:
             idx = [(seg - 1) % n, seg % n, (seg + 1) % n, (seg + 2) % n]
         else:
             idx = [seg, seg + 1, seg + 2, seg + 3]
-        return (self.points[idx[0]], self.points[idx[1]],
-                self.points[idx[2]], self.points[idx[3]])
+        return (self._ext[idx[0]], self._ext[idx[1]],
+                self._ext[idx[2]], self._ext[idx[3]])
+
+    def _seg_t(self, u):
+        """Split global parameter into (segment index, local t), clamping
+        the open-spline end so u == n_segs evaluates the final point."""
+        if not self.closed and u >= self.n_segs:
+            return self.n_segs - 1, 1.0
+        seg = int(u) % self.n_segs
+        return seg, u - int(u)
 
     def point_at(self, u):
-        """Evaluate at global parameter u in [0, n_segs). Returns 3D point."""
-        seg = int(u) % self.n_segs
-        t = u - int(u)
+        """Evaluate at global parameter u in [0, n_segs]. Returns 3D point."""
+        seg, t = self._seg_t(u)
         p0, p1, p2, p3 = self._seg_points(seg)
         t2, t3 = t * t, t * t * t
         return 0.5 * ((2.0 * p1)
@@ -56,8 +72,7 @@ class Spline:
 
     def tangent_at(self, u):
         """Unnormalized curve derivative at global parameter u."""
-        seg = int(u) % self.n_segs
-        t = u - int(u)
+        seg, t = self._seg_t(u)
         p0, p1, p2, p3 = self._seg_points(seg)
         t2 = t * t
         return 0.5 * ((-p0 + p2)
