@@ -190,10 +190,13 @@ class Renderer:
             return
         w_px = max(8, 3.2 * self.focal / wp[2])
         surf = pygame.Surface((120, 64), pygame.SRCALPHA)
+        glow = DASH_COLOR if craft.grounded else (255, 210, 140)
+        if craft.boosting:
+            glow = (255, 250, 235)
+            pygame.draw.ellipse(surf, (255, 200, 110, 110), (0, 6, 120, 56))
         pygame.draw.ellipse(surf, HULL_SHADE, (4, 18, 112, 40))
         pygame.draw.ellipse(surf, HULL_COLOR, (4, 12, 112, 38))
         pygame.draw.ellipse(surf, CANOPY_COLOR, (38, 16, 44, 16))
-        glow = DASH_COLOR if craft.grounded else (255, 210, 140)
         pygame.draw.rect(surf, glow, (18, 50, 22, 9), border_radius=4)
         pygame.draw.rect(surf, glow, (80, 50, 22, 9), border_radius=4)
         roll = -craft.lat_vel * 0.9
@@ -217,3 +220,13 @@ class Renderer:
         if craft.scraping:
             warn = self.font_med.render("EDGE", True, RAIL_COLOR)
             self.screen.blit(warn, (self.cx - warn.get_width() // 2, self.h - 60))
+
+        # boost readiness, bottom-right
+        charge = craft.boost_charge()
+        color = self.planet.accent_color if charge >= 1.0 else TEXT_DIM
+        txt = self.font_med.render("BOOST", True, color)
+        x = self.w - txt.get_width() - 40
+        self.screen.blit(txt, (x, self.h - 78))
+        bar_w = txt.get_width()
+        pygame.draw.rect(self.screen, (60, 65, 74), (x, self.h - 46, bar_w, 6))
+        pygame.draw.rect(self.screen, color, (x, self.h - 46, int(bar_w * charge), 6))

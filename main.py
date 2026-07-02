@@ -9,6 +9,8 @@ Controls:
     S / Down      brake
     A,D / L,R     steer
     Space         jump
+    Shift (tap)   boost — lateral kick in your steer direction,
+                  forward slam if steering neutral; works airborne
     R             reset to start
     Esc           quit
 
@@ -81,6 +83,7 @@ def main():
         dt = clock.tick(60) / 1000.0
         dt = min(dt, 1 / 20.0)  # clamp hitches so physics never explodes
 
+        boost = False
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 running = False
@@ -89,16 +92,19 @@ def main():
                     running = False
                 elif ev.key == pygame.K_r:
                     craft.reset()
+                elif ev.key in (pygame.K_LSHIFT, pygame.K_RSHIFT):
+                    boost = True
 
         if smoke_frames:
             dt = 1 / 60.0  # deterministic physics for the scripted run
             throttle, brake = 1.0, 0.0
             steer = -0.6 if frame % 240 > 170 else 0.2
             jump = frame % 200 == 150
+            boost = frame % 130 == 60
         else:
             throttle, brake, steer, jump = read_input(pygame.key.get_pressed())
 
-        craft.update(dt, throttle, brake, steer, jump)
+        craft.update(dt, throttle, brake, steer, jump, boost)
         renderer.draw(spline, craft)
         pygame.display.flip()
 

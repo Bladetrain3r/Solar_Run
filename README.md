@@ -23,6 +23,7 @@ python3 main.py
 | S / ↓ | brake |
 | A,D / ←,→ | steer |
 | Space | jump |
+| Shift (tap) | boost — ~30 g lateral kick in your steer direction; forward slam to top speed if steering neutral; full power airborne |
 | R | reset |
 | Esc | quit |
 
