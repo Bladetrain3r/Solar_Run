@@ -1,0 +1,9 @@
+{
+  "name": "Moon",
+  "gravity": 13.0,
+  "drag": 0.0,
+  "grip": 1.0,
+  "sky_color": [11, 13, 18],
+  "ground_color": [26, 28, 33],
+  "accent_color": [255, 176, 58]
+}
