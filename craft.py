@@ -5,6 +5,12 @@ across it, altitude above it. Steering is lateral + jump (Skyroads-legible),
 never 6-DOF. The craft's numbers stay constant; the PLANET imposes gravity,
 drag and grip — constrain the world, not the actor.
 
+The craft has its OWN trajectory: when the track curves under it, it keeps
+going straight, which in ribbon space is a centrifugal push toward the
+outside (curvature * speed^2). Steering is lateral THRUST you supply to
+fight that — so corner-holding speed emerges from physics: max corner
+speed = sqrt(steer_accel * grip / curvature).
+
 All feel-tuning numbers live in TUNING at the top. Iterate there, longest.
 """
 
@@ -18,12 +24,14 @@ TUNING = {
     "thrust_accel": 48.0,     # m/s^2 at full throttle
     "brake_decel": 90.0,      # m/s^2 at full brake
     "base_damp": 0.30,        # /s, linear speed bleed (engine/field losses)
-    "max_lat_speed": 30.0,    # m/s, lateral slew at full steer, grip=1
-    "lat_response": 9.0,      # /s, how fast lateral vel chases the stick
-    "air_control": 0.35,      # steering authority multiplier while airborne
+    "steer_accel": 75.0,      # m/s^2 lateral thrust at full steer, grip=1
+    "lat_damp": 2.6,          # /s, lateral-velocity bleed (field "grip")
+    "air_steer": 0.15,        # steering authority multiplier while airborne
+    "air_damp": 0.1,          # lateral damping multiplier while airborne
     "jump_impulse": 8.5,      # m/s vertical kick
     "ribbon_half_width": 10.0,# m, drivable half-width of the ribbon
     "hull_half_width": 1.3,   # m, craft half-width (edge clamp margin)
+    "rail_bounce": 0.35,      # fraction of lateral vel reflected off a rail
     "scrape_decel": 1.2,      # /s, speed bleed while grinding an edge rail
     "grounded_eps": 0.08,     # m, altitude below which we count as grounded
 }
@@ -60,21 +68,29 @@ class Craft:
         accel -= self.planet.drag * self.speed * self.speed   # atmosphere
         self.speed = max(0.0, self.speed + accel * dt)
 
-        # --- lateral: grip-limited slew toward the stick ---
-        authority = self.planet.grip
-        if not self.grounded:
-            authority *= t["air_control"]
-        target = steer * t["max_lat_speed"] * authority
-        blend = min(1.0, t["lat_response"] * authority * dt)
-        self.lat_vel += (target - self.lat_vel) * blend
+        # --- lateral: the craft's own trajectory ---
+        # The track curving under you IS a lateral push toward the outside
+        # (in the ribbon's rotating frame). Left bend = drift right. This
+        # applies grounded or airborne — it's geometry, not grip.
+        centrifugal = self.spline.curvature_at(self.dist) * self.speed ** 2
+
+        # Steering is lateral thrust; grip is how hard the field can shove.
+        grip = self.planet.grip
+        steer_authority = grip * (1.0 if self.grounded else t["air_steer"])
+        damp = t["lat_damp"] * grip * (1.0 if self.grounded else t["air_damp"])
+
+        lat_accel = (steer * t["steer_accel"] * steer_authority
+                     + centrifugal
+                     - damp * self.lat_vel)
+        self.lat_vel += lat_accel * dt
         self.lat += self.lat_vel * dt
 
-        # edge rails: clamp and grind (falling off arrives with forks)
+        # edge rails: bounce and grind (falling off arrives with forks)
         limit = t["ribbon_half_width"] - t["hull_half_width"]
         self.scraping = False
         if abs(self.lat) > limit:
             self.lat = limit if self.lat > 0 else -limit
-            self.lat_vel = 0.0
+            self.lat_vel = -self.lat_vel * t["rail_bounce"]
             self.speed *= max(0.0, 1.0 - t["scrape_decel"] * dt)
             self.scraping = True
 

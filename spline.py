@@ -98,6 +98,19 @@ class Spline:
         n = np.linalg.norm(t)
         return t / n if n > 0 else np.array([1.0, 0.0, 0.0])
 
+    def curvature_at(self, d, h=1.0):
+        """Signed horizontal curvature D metres along, in rad/m.
+
+        Positive = track bending left (CCW seen from above). This is the
+        rate the centerline's heading changes per metre — the craft's
+        centrifugal drift is curvature * speed^2.
+        """
+        f1 = self.forward_at(d - h)
+        f2 = self.forward_at(d + h)
+        cross = f1[0] * f2[1] - f1[1] * f2[0]
+        dot = f1[0] * f2[0] + f1[1] * f2[1]
+        return float(np.arctan2(cross, dot)) / (2.0 * h)
+
     def frame_at(self, d):
         """(pos, forward, right, up) frame D metres along the track.
 

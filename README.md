@@ -30,8 +30,12 @@ Headless smoke test: `python3 main.py --smoke 300 [screenshot.png]`
 
 ## Tuning the feel
 
-- `craft.py` → `TUNING` dict: thrust, brake, steering slew, jump impulse,
-  air control, edge behaviour. Iterate here longest.
+- `craft.py` → `TUNING` dict: thrust, brake, steering thrust + lateral grip,
+  jump impulse, air control, rail bounce. Iterate here longest.
+- The craft has its own trajectory: track curvature shoves you toward the
+  outside at `curvature × speed²`; steering is the force you supply against
+  it. Max corner speed = `sqrt(steer_accel × grip / curvature)` — brake for
+  the final hairpin.
 - `data/planets/moon.json`: gravity / drag / grip — gameplay-scaled numbers,
   relative feel between bodies is what matters.
 - `main.py` → `TRACK_POINTS`: the hardcoded circuit (3D control points the
