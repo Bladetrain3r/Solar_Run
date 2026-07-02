@@ -21,8 +21,8 @@ import numpy as np
 # profiles multiply in on top (gravity/drag/grip).
 # ---------------------------------------------------------------------------
 TUNING = {
-    "thrust_accel": 48.0,     # m/s^2 at full throttle
-    "brake_decel": 90.0,      # m/s^2 at full brake
+    "thrust_accel": 32.0,     # m/s^2 at full throttle
+    "brake_decel": 48.0,      # m/s^2 at full brake
     "base_damp": 0.30,        # /s, linear speed bleed (engine/field losses)
     "steer_accel": 100.0,     # m/s^2 lateral thrust at full steer, grip=1
     "lat_damp": 2.6,          # /s, lateral-velocity bleed (field "grip")
@@ -30,8 +30,8 @@ TUNING = {
                               # fails to counter (1.0 = full physics)
     "air_steer": 0.35,        # steering authority multiplier while airborne
     "air_damp": 0.25,         # lateral damping multiplier while airborne
-    "jump_impulse": 8.5,      # m/s vertical kick
-    "boost_lat_accel": 300.0, # m/s^2 (~30g) lateral kick, full power in air
+    "jump_impulse": 4.5,      # m/s vertical kick
+    "boost_lat_accel": 100.0, # m/s^2 (~30g) lateral kick, full power in air
     "boost_lat_time": 0.2,    # s, lateral boost burn
     "boost_fwd_accel": 260.0, # m/s^2 forward slam when boosting straight
     "boost_fwd_time": 0.35,   # s, forward boost burn
