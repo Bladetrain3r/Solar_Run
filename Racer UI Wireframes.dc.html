@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet"><style>body{margin:0;background:#f0eee9;font-family:system-ui,sans-serif}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}.dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}.dv-notes{width:1280px;font:11px/1.5 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.55);display:flex;gap:18px}.dv-notes span{flex:1}</style></helmet>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Hi-fi passes on <a class="dv-oid" href="#1b">1b</a> (HUD) + <a class="dv-oid" href="#1e">1e</a> (editor, fine point placement)</span></div>
+<div class="dv-opts">
+
+<!-- ============ 2a — Hi-fi HUD (from 1b) ============ -->
+<div class="dv-opt" id="2a">
+  <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>HUD hi-fi — corner cluster, Moon regime, mid-race</div>
+  <div class="dv-card" style="width:1280px">
+    <div style="position:relative;width:1280px;height:720px;background:#0b0d12;overflow:hidden;font-family:'Chakra Petch',ui-monospace,monospace;color:#cbd2dc">
+      <!-- stars -->
+      <div style="position:absolute;inset:0;background-image:radial-gradient(1.5px 1.5px at 12% 8%,rgba(220,228,240,.8),transparent 60%),radial-gradient(1px 1px at 34% 18%,rgba(220,228,240,.6),transparent 60%),radial-gradient(1.5px 1.5px at 58% 6%,rgba(220,228,240,.7),transparent 60%),radial-gradient(1px 1px at 76% 22%,rgba(220,228,240,.5),transparent 60%),radial-gradient(1.5px 1.5px at 90% 12%,rgba(220,228,240,.7),transparent 60%),radial-gradient(1px 1px at 46% 28%,rgba(220,228,240,.45),transparent 60%),radial-gradient(1px 1px at 22% 30%,rgba(220,228,240,.4),transparent 60%)"></div>
+      <!-- earth on horizon -->
+      <div style="position:absolute;left:70%;top:15%;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 38% 35%,#7fa8c9,#3a5f80 55%,#1d3348 80%);box-shadow:0 0 24px rgba(127,168,201,.25)"></div>
+      <!-- lunar terrain -->
+      <div style="position:absolute;left:0;right:0;top:38%;bottom:0;background:linear-gradient(#2a2d34,#1a1c21 40%)"></div>
+      <div style="position:absolute;left:6%;top:41%;width:170px;height:44px;border-radius:50%;border:2px solid rgba(203,210,220,.18);transform:scaleY(.55)"></div>
+      <div style="position:absolute;left:74%;top:47%;width:230px;height:60px;border-radius:50%;border:2px solid rgba(203,210,220,.14);transform:scaleY(.5)"></div>
+      <div style="position:absolute;left:0;right:0;top:38%;border-top:2px solid rgba(203,210,220,.3)"></div>
+      <!-- road ribbon -->
+      <div style="position:absolute;left:0;right:0;top:38%;bottom:0;clip-path:polygon(46.5% 0,53.5% 0,84% 100%,16% 100%)">
+        <div style="position:absolute;inset:0;background:linear-gradient(#3a3e46,#2c2f36)"></div>
+        <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(11,13,18,.55) 0 3px,transparent 3px 22px,transparent 22px 44px)"></div>
+        <div style="position:absolute;left:0;right:0;top:0;bottom:0;clip-path:polygon(49.6% 0,50.4% 0,51.6% 100%,48.4% 100%);background:repeating-linear-gradient(0deg,#ffb03a 0 26px,transparent 26px 60px);opacity:.75"></div>
+      </div>
+      <!-- ribbon edge rails -->
+      <div style="position:absolute;left:0;right:0;top:38%;bottom:0;clip-path:polygon(46.5% 0,47.3% 0,17.6% 100%,16% 100%);background:#e8664d;opacity:.85"></div>
+      <div style="position:absolute;left:0;right:0;top:38%;bottom:0;clip-path:polygon(52.7% 0,53.5% 0,84% 100%,82.4% 100%);background:#e8664d;opacity:.85"></div>
+      <!-- craft -->
+      <div style="position:absolute;left:50%;top:76%;transform:translateX(-50%);width:110px;height:40px;border-radius:20px 20px 14px 14px;background:linear-gradient(#e4e8ee,#9aa2ae 70%,#5d646e);box-shadow:0 14px 22px rgba(0,0,0,.55)">
+        <div style="position:absolute;left:50%;top:6px;transform:translateX(-50%);width:44px;height:14px;border-radius:8px;background:#1b2c3a"></div>
+        <div style="position:absolute;left:16px;bottom:-7px;width:18px;height:8px;border-radius:4px;background:#ffb03a;box-shadow:0 0 14px 4px rgba(255,176,58,.55)"></div>
+        <div style="position:absolute;right:16px;bottom:-7px;width:18px;height:8px;border-radius:4px;background:#ffb03a;box-shadow:0 0 14px 4px rgba(255,176,58,.55)"></div>
+      </div>
+      <!-- top-left route tree panel -->
+      <div style="position:absolute;top:26px;left:30px;background:rgba(10,11,15,.78);border:2px solid rgba(203,210,220,.35);clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%);padding:14px 22px 16px 18px;display:flex;flex-direction:column;gap:11px">
+        <div style="font-size:13px;font-weight:600;letter-spacing:.24em;color:rgba(203,210,220,.75)">MOON &nbsp;·&nbsp; ROUTE A-2</div>
+        <div style="display:flex;align-items:center">
+          <div style="width:15px;height:15px;background:#cbd2dc"></div>
+          <div style="width:24px;height:3px;background:rgba(203,210,220,.55)"></div>
+          <div style="width:15px;height:15px;background:#cbd2dc"></div>
+          <div style="width:24px;height:3px;background:rgba(203,210,220,.55)"></div>
+          <div style="width:17px;height:17px;border:3px solid #ffb03a;box-shadow:0 0 10px rgba(255,176,58,.5)"></div>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-left:7px">
+            <div style="display:flex;align-items:center;gap:7px"><div style="width:20px;height:3px;background:#ffb03a"></div><div style="width:13px;height:13px;border:2px solid #ffb03a"></div><div style="font-size:12px;font-weight:600;color:#ffb03a">HIGH · 1.2km · LOW-GRIP</div></div>
+            <div style="display:flex;align-items:center;gap:7px"><div style="width:20px;height:3px;background:rgba(203,210,220,.4)"></div><div style="width:13px;height:13px;border:2px solid rgba(203,210,220,.4)"></div><div style="font-size:12px;color:rgba(203,210,220,.5)">LOW · 1.6km · SAFE</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- top-right clock -->
+      <div style="position:absolute;top:26px;right:30px;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="font-size:15px;font-weight:600;letter-spacing:.26em;color:rgba(203,210,220,.75)">CKPT 3 IN 412m</div>
+        <div style="font-size:86px;font-weight:700;line-height:1;color:#ffb03a;text-shadow:0 0 22px rgba(255,176,58,.45);font-variant-numeric:tabular-nums">0:12.4</div>
+        <div style="font-size:15px;letter-spacing:.1em;color:rgba(203,210,220,.6)">TOTAL 1:48.9 &nbsp;·&nbsp; GHOST <span style="color:#e8664d;font-weight:600">+0.82</span></div>
+      </div>
+      <!-- bottom-left speed -->
+      <div style="position:absolute;left:30px;bottom:66px;display:flex;align-items:flex-end;gap:16px">
+        <div style="width:24px;height:170px;border:2px solid rgba(203,210,220,.5);background:rgba(10,11,15,.6);display:flex;align-items:flex-end;padding:3px"><div style="width:100%;height:72%;background:repeating-linear-gradient(0deg,#cbd2dc 0 9px,rgba(203,210,220,.25) 9px 13px)"></div></div>
+        <div>
+          <div style="font-size:100px;font-weight:700;line-height:.95;text-shadow:0 0 18px rgba(203,210,220,.25);font-variant-numeric:tabular-nums">412</div>
+          <div style="font-size:16px;font-weight:600;letter-spacing:.18em;color:rgba(203,210,220,.6)">KM/H &nbsp;·&nbsp; THRUST 72%</div>
+        </div>
+      </div>
+      <!-- bottom warning strip -->
+      <div style="position:absolute;left:0;right:0;bottom:0;height:42px;background:repeating-linear-gradient(45deg,rgba(255,176,58,.9) 0 24px,#15171c 24px 48px)">
+        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:21px;font-weight:700;letter-spacing:.32em;background:#0b0d12;color:#ffb03a;padding:5px 30px 5px 36px;border:2px solid #ffb03a">LOW GRIP AHEAD</div>
+      </div>
+      <!-- scanlines -->
+      <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.14) 0 1px,transparent 1px 3px);pointer-events:none"></div>
+    </div>
+  </div>
+  <div class="dv-notes"><span>· Chakra Petch for all HUD type — chunky-arcade but highly legible; tabular numerals so digits don't jitter.</span><span>· Accent = Moon amber per <a class="dv-oid" href="#1g">1g</a>; ghost deficit in the hazard red so + / − reads instantly.</span><span>· Scene (stars, craters, rails, craft) is illustrative — the pygame renderer owns it.</span></div>
+</div>
+
+<!-- ============ 2b — Hi-fi editor (from 1e) ============ -->
+<div class="dv-opt" id="2b">
+  <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Editor hi-fi — fine control points between checkpoints, insert-on-segment</div>
+  <div class="dv-card" style="width:1280px">
+    <div style="width:1280px;height:720px;background:#191b20;display:grid;grid-template-columns:1fr 300px;grid-template-rows:52px 1fr 34px;font-family:ui-monospace,Menlo,monospace;color:#c4cad4">
+      <!-- toolbar -->
+      <div style="grid-column:1/3;display:flex;align-items:center;gap:8px;padding:0 14px;background:#101115;border-bottom:1px solid rgba(196,202,212,.22);font-family:'Chakra Petch',ui-monospace,monospace;font-size:14px;font-weight:600;letter-spacing:.06em">
+        <div style="background:#ffb03a;color:#101115;padding:7px 16px">PLACE</div>
+        <div style="border:2px solid rgba(196,202,212,.35);padding:5px 14px">DRAG</div>
+        <div style="border:2px solid rgba(196,202,212,.35);padding:5px 14px">BRANCH</div>
+        <div style="border:2px solid rgba(196,202,212,.35);padding:5px 14px">HEIGHT</div>
+        <div style="border:2px solid rgba(196,202,212,.35);padding:5px 14px">FLAG</div>
+        <div style="border:2px solid rgba(196,202,212,.35);padding:5px 14px">CKPT</div>
+        <div style="width:1px;height:26px;background:rgba(196,202,212,.25);margin:0 6px"></div>
+        <div style="font-family:ui-monospace,monospace;font-weight:400;font-size:12px;color:rgba(196,202,212,.55)">PLACE on a segment inserts a point · on empty canvas extends the line</div>
+        <div style="flex:1"></div>
+        <div style="font-family:ui-monospace,monospace;font-weight:400;font-size:12px;color:rgba(196,202,212,.55)">moon_a2.json · unsaved*</div>
+        <div style="border:2px solid #ffb03a;color:#ffb03a;padding:5px 16px">SAVE</div>
+      </div>
+      <!-- canvas -->
+      <div style="grid-row:2/3;grid-column:1/2;position:relative;background:#16181c;background-image:linear-gradient(rgba(196,202,212,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(196,202,212,.05) 1px,transparent 1px),linear-gradient(rgba(196,202,212,.11) 1px,transparent 1px),linear-gradient(90deg,rgba(196,202,212,.11) 1px,transparent 1px);background-size:24px 24px,24px 24px,120px 120px,120px 120px;overflow:hidden">
+        <svg width="980" height="634" viewBox="0 0 980 634" style="position:absolute;inset:0">
+          <path d="M 80 520 Q 260 500 380 360 Q 480 250 620 270" fill="none" stroke="#c4cad4" stroke-width="3"></path>
+          <path d="M 620 270 Q 760 290 860 190" fill="none" stroke="#ffb03a" stroke-width="4"></path>
+          <path d="M 620 270 Q 740 380 900 400" fill="none" stroke="#c4cad4" stroke-width="3" stroke-dasharray="9 8" opacity="0.6"></path>
+          <!-- fine control points, main line -->
+          <circle cx="80" cy="520" r="6" fill="#c4cad4"></circle>
+          <circle cx="166" cy="503" r="6" fill="#c4cad4"></circle>
+          <circle cx="316" cy="423" r="6" fill="#c4cad4"></circle>
+          <circle cx="380" cy="360" r="6" fill="#c4cad4"></circle>
+          <circle cx="490" cy="283" r="6" fill="#c4cad4"></circle>
+          <!-- selected point -->
+          <rect x="544" y="259" width="18" height="18" fill="none" stroke="#ffb03a" stroke-width="3"></rect>
+          <circle cx="553" cy="268" r="5" fill="#ffb03a"></circle>
+          <!-- insert affordance -->
+          <circle cx="433" cy="313" r="8" fill="none" stroke="#ffb03a" stroke-width="2" stroke-dasharray="4 3"></circle>
+          <!-- checkpoint gates (diamonds) -->
+          <rect x="236" y="461" width="18" height="18" fill="#16181c" stroke="#c4cad4" stroke-width="3" transform="rotate(45 245 470)"></rect>
+          <rect x="799" y="224" width="18" height="18" fill="#16181c" stroke="#c4cad4" stroke-width="3" transform="rotate(45 808 233)"></rect>
+          <!-- fork node -->
+          <circle cx="620" cy="270" r="12" fill="none" stroke="#ffb03a" stroke-width="3"></circle>
+          <circle cx="620" cy="270" r="5" fill="#ffb03a"></circle>
+          <!-- branch fine points -->
+          <circle cx="688" cy="273" r="6" fill="#ffb03a"></circle>
+          <circle cx="750" cy="260" r="6" fill="#ffb03a"></circle>
+          <!-- finish -->
+          <circle cx="860" cy="190" r="9" fill="none" stroke="#ffb03a" stroke-width="3"></circle>
+          <!-- alt branch points -->
+          <circle cx="683" cy="319" r="5" fill="#c4cad4" opacity="0.6"></circle>
+          <circle cx="750" cy="358" r="5" fill="#c4cad4" opacity="0.6"></circle>
+          <circle cx="823" cy="384" r="5" fill="#c4cad4" opacity="0.6"></circle>
+          <circle cx="900" cy="400" r="7" fill="none" stroke="#c4cad4" stroke-width="3" opacity="0.6"></circle>
+        </svg>
+        <!-- crosshair cursor near insert point -->
+        <div style="position:absolute;left:433px;top:293px;width:1px;height:40px;background:rgba(255,176,58,.5)"></div>
+        <div style="position:absolute;left:413px;top:313px;width:40px;height:1px;background:rgba(255,176,58,.5)"></div>
+        <div style="position:absolute;left:450px;top:322px;font-size:11px;color:#ffb03a;background:rgba(16,17,21,.9);border:1px solid rgba(255,176,58,.5);padding:3px 8px">insert point · d = 1,284 m</div>
+        <!-- labels -->
+        <div style="position:absolute;left:212px;top:486px;font-size:11px;color:rgba(196,202,212,.65)">CKPT 1 · 0:38 target</div>
+        <div style="position:absolute;left:775px;top:196px;font-size:11px;color:rgba(196,202,212,.65)">CKPT 2</div>
+        <div style="position:absolute;left:600px;top:230px;font-size:11px;font-weight:700;color:#ffb03a">FORK</div>
+        <div style="position:absolute;left:566px;top:276px;font-size:11px;color:#ffb03a;background:rgba(16,17,21,.9);border:1px solid rgba(255,176,58,.5);padding:3px 8px">#23 · x 553 y 268 · h +6.5m</div>
+        <div style="position:absolute;left:700px;top:300px;font-size:11px;color:#ffb03a">flag: LOW-GRIP</div>
+        <!-- legend -->
+        <div style="position:absolute;left:14px;bottom:12px;display:flex;gap:16px;align-items:center;font-size:11px;color:rgba(196,202,212,.6);background:rgba(16,17,21,.85);border:1px solid rgba(196,202,212,.2);padding:6px 12px">
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border-radius:50%;background:#c4cad4"></div>control pt</div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;border:2px solid #c4cad4;transform:rotate(45deg)"></div>checkpoint</div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:12px;height:12px;border:2px solid #ffb03a;border-radius:50%"></div>fork</div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:18px;height:3px;background:#ffb03a"></div>flagged segment</div>
+        </div>
+        <!-- zoom -->
+        <div style="position:absolute;right:14px;top:12px;font-size:11px;color:rgba(196,202,212,.5);border:1px solid rgba(196,202,212,.25);background:rgba(16,17,21,.85);padding:5px 10px">grid 10 m · fine 2 m · [scroll] zoom</div>
+      </div>
+      <!-- right panel -->
+      <div style="grid-row:2/3;grid-column:2/3;position:relative;border-left:1px solid rgba(196,202,212,.22);background:#1d1f24;padding:16px;display:flex;flex-direction:column;gap:14px;font-size:12px">
+        <div style="font-family:'Chakra Petch',monospace;font-weight:600;font-size:13px;letter-spacing:.14em;color:rgba(196,202,212,.7)">POINT #23 <span style="color:rgba(196,202,212,.4);font-weight:400">/ 31</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="border:1px solid rgba(196,202,212,.3);padding:8px 10px"><div style="color:rgba(196,202,212,.45);font-size:10px">X</div>553</div>
+          <div style="border:1px solid rgba(196,202,212,.3);padding:8px 10px"><div style="color:rgba(196,202,212,.45);font-size:10px">Y</div>268</div>
+          <div style="border:1px solid #ffb03a;padding:8px 10px;color:#ffb03a"><div style="color:rgba(255,176,58,.6);font-size:10px">H</div>+6.5</div>
+        </div>
+        <div style="border:1px solid rgba(196,202,212,.25);padding:12px 12px 10px">
+          <div style="font-size:10px;letter-spacing:.15em;color:rgba(196,202,212,.5);margin-bottom:8px">LOCAL SIDE VIEW · ±5 pts</div>
+          <div style="height:64px;border-bottom:2px solid rgba(196,202,212,.35);position:relative">
+            <div style="position:absolute;left:4%;bottom:10px;width:7px;height:7px;border-radius:50%;background:#c4cad4"></div>
+            <div style="position:absolute;left:20%;bottom:18px;width:7px;height:7px;border-radius:50%;background:#c4cad4"></div>
+            <div style="position:absolute;left:36%;bottom:26px;width:7px;height:7px;border-radius:50%;background:#c4cad4"></div>
+            <div style="position:absolute;left:50%;bottom:34px;width:9px;height:9px;border:2px solid #ffb03a"></div>
+            <div style="position:absolute;left:66%;bottom:24px;width:7px;height:7px;border-radius:50%;background:#c4cad4"></div>
+            <div style="position:absolute;left:82%;bottom:14px;width:7px;height:7px;border-radius:50%;background:#c4cad4"></div>
+          </div>
+          <div style="color:rgba(196,202,212,.45);font-size:10px;margin-top:6px">drag vertically · [H] full-width view</div>
+        </div>
+        <div style="font-family:'Chakra Petch',monospace;font-weight:600;font-size:13px;letter-spacing:.14em;color:rgba(196,202,212,.7);margin-top:4px">SEGMENT →#24 FLAG</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <div style="border:1px solid rgba(196,202,212,.4);padding:5px 12px">NORMAL</div>
+          <div style="background:#ffb03a;color:#101115;font-weight:700;padding:5px 12px">LOW-GRIP</div>
+          <div style="border:1px solid rgba(196,202,212,.4);padding:5px 12px">BOOST</div>
+          <div style="border:1px solid rgba(196,202,212,.4);padding:5px 12px">HAZARD</div>
+        </div>
+        <div style="margin-top:auto;color:rgba(196,202,212,.45);font-size:11px;line-height:1.5">Fine placement: PLACE-click anywhere on an existing segment splits it at that arc-length — checkpoints stay put, points densify between them.</div>
+      </div>
+      <!-- statusline -->
+      <div style="grid-column:1/3;display:flex;align-items:center;gap:20px;padding:0 14px;background:#101115;border-top:1px solid rgba(196,202,212,.22);font-size:11px;color:rgba(196,202,212,.55)">
+        <div style="color:#ffb03a;font-weight:700">MODE: PLACE</div>
+        <div>31 pts · 1 fork · 2 ckpts · 2.8 km total</div>
+        <div style="flex:1"></div>
+        <div>[1-6] tools · [scroll] zoom · [space] pan · [S] save</div>
+      </div>
+    </div>
+  </div>
+  <div class="dv-notes"><span>· Key change vs <a class="dv-oid" href="#1e">1e</a>: PLACE-on-segment inserts a point at that arc-length — dense authoring between checkpoints without touching them.</span><span>· Two-scale grid (10 m / 2 m) + zoom hint supports the fine work; legend pins the shape vocabulary.</span><span>· Selected-point tooltip on canvas mirrors the panel, so fine drags don't need eye travel.</span></div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "make <a class="dv-oid" href="#2a">2a</a>'s warning strip pulse" · "show <a class="dv-oid" href="#2b">2b</a> in HEIGHT mode" · "retint both for Mars"</p>
+</section>
+
+<!-- ============ tint legend ============ -->
+<div class="dv-opt" id="1g">
+  <div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Per-planet UI tint (applies to any option above)</div>
+  <div class="dv-card" style="width:620px">
+    <div style="padding:22px 24px;display:flex;flex-direction:column;gap:12px;font-family:ui-monospace,Menlo,monospace;font-size:13px;color:#333">
+      <div style="color:rgba(0,0,0,.55)">Structure stays neutral grey; only the ACCENT (clock, warnings, active tool, fork branch) tints per body:</div>
+      <div style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;background:#ffb03a"></div>MOON — amber (shown above)</div>
+      <div style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;background:oklch(0.75 0.16 45)"></div>MERCURY — ember orange</div>
+      <div style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;background:oklch(0.75 0.16 100)"></div>VENUS — acid yellow-green</div>
+      <div style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;background:oklch(0.75 0.16 25)"></div>MARS — rust red</div>
+      <div style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;background:oklch(0.75 0.16 230)"></div>EARTH (underwater) — cyan</div>
+    </div>
+  </div>
+  <div class="dv-notes" style="width:620px"><span>· One variable per planet profile → trivially data-driven, matches planet.py.</span></div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "take <a class="dv-oid" href="#1c">1c</a> but add the route tree from <a class="dv-oid" href="#1b">1b</a> at checkpoints only" · "merge <a class="dv-oid" href="#1d">1d</a>'s side view into <a class="dv-oid" href="#1f">1f</a>" · "go hi-fi on the winner"</p>
+</section>
+</x-dc>
+</body>
+</html>
