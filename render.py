@@ -101,10 +101,12 @@ class Renderer:
     # --- scene ---------------------------------------------------------------
 
     def draw(self, track, craft, race=None, ghost_pos=None,
-             best_total=None, zen=False):
+             best_total=None, zen=False, terrain=None):
         cam = self._camera(track, craft)
         samples, gates = track.sample_ahead(craft.dist, DRAW_AHEAD)
         self._draw_sky(cam)
+        if terrain is not None:
+            self._draw_terrain(terrain, cam)
         self._draw_strip(samples, cam, craft.odometer,
                          scraping=craft.scraping)
         self._draw_gates(gates, cam)
@@ -142,6 +144,43 @@ class Renderer:
         if 0 <= ex < self.w and ey > 20:
             pygame.draw.circle(self.screen, (29, 51, 72), (ex, ey), 26)
             pygame.draw.circle(self.screen, (127, 168, 201), (ex - 7, ey - 7), 17)
+
+    def _draw_terrain(self, terrain, cam):
+        """Low-poly heightfield, painter's algorithm. All vertices are
+        projected in one numpy pass; only the per-cell polygon calls
+        loop in Python. Ribbon draws after (corridor is clamped under
+        it, so overdraw is the cheap and correct-enough order)."""
+        cam_pos, r, u, f = cam
+        ny, nx, _ = terrain.verts.shape
+        D = terrain.verts.reshape(-1, 3) - cam_pos
+        z = D @ f
+        with np.errstate(divide="ignore", invalid="ignore"):
+            sx = self.cx + (D @ r) * self.focal / z
+            sy = self.cy - (D @ u) * self.focal / z
+        z = z.reshape(ny, nx)
+        sx, sy = sx.reshape(ny, nx), sy.reshape(ny, nx)
+
+        C = terrain.cell_centers.reshape(-1, 3) - cam_pos
+        cz = C @ f
+        cx_lat = np.abs(C @ r)
+        vis = ((cz > NEAR_CLIP) & (cz < 1250.0)
+               & (cx_lat < cz * 1.35 + 150.0)).reshape(ny - 1, nx - 1)
+        # every corner must sit in front of the near plane
+        zin = z > NEAR_CLIP
+        vis &= zin[:-1, :-1] & zin[1:, :-1] & zin[:-1, 1:] & zin[1:, 1:]
+
+        iy, ix = np.nonzero(vis)
+        order = np.argsort(-cz.reshape(ny - 1, nx - 1)[iy, ix])
+        sky = self.planet.sky_color
+        for k in order:
+            i, j = int(iy[k]), int(ix[k])
+            fog = min(1.0, cz.reshape(ny - 1, nx - 1)[i, j] / 1250.0) * 0.92
+            color = _lerp3(tuple(terrain.cell_colors[i, j]), sky, fog)
+            pygame.draw.polygon(self.screen, color,
+                                [(sx[i, j], sy[i, j]),
+                                 (sx[i, j + 1], sy[i, j + 1]),
+                                 (sx[i + 1, j + 1], sy[i + 1, j + 1]),
+                                 (sx[i + 1, j], sy[i + 1, j])])
 
     def _draw_strip(self, samples, cam, odometer, scraping=False):
         """The ribbon, quad by quad from track samples, far to near."""
@@ -204,7 +243,8 @@ class Renderer:
                 pts[name] = (int(pr[0]), int(pr[1]))
             if len(pts) < 4:
                 continue
-            w = max(1, int(3.0 * self.focal / max(1.0, d_off + CAM_BACK)))
+            w = min(14, max(1, int(3.0 * self.focal
+                                   / max(1.0, d_off + CAM_BACK))))
             pygame.draw.line(self.screen, color, pts["lb"], pts["lt"], w)
             pygame.draw.line(self.screen, color, pts["rb"], pts["rt"], w)
             pygame.draw.line(self.screen, color, pts["lt"], pts["rt"], w)

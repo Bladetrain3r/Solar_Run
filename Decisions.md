@@ -141,7 +141,48 @@ still open. Append entries; don't rewrite history — supersede it.
   atomic writes) after a one-off launch exception on Moon A-1 — likely a
   fork-era ghost file with the old frame shape. Watch for recurrence.
 
-## Next
+## Decided (Stage 3)
 
-**Stage 3 — terrain**: Moon heightmap (noise + craters) under the ribbon,
-simple shading. The MVP done-line.
+- **D-024 · Terrain = data (terrain.py) + draw (render.py)**: value-noise
+  hills + crater displacement on a ~50 m low-poly grid around the track,
+  flat-shaded per cell (fixed sun), seeded from the track name — the same
+  track always sits in the same landscape; custom/random tracks each get
+  their own.
+- **D-025 · The corridor is pressed under the ribbon**: terrain within
+  ~28 m of the racing line is clamped 3 m below the road, with the
+  allowance growing quadratically outward — hills live away from the
+  line, the road never gets buried, no ribbon/terrain z-fighting.
+- **D-026 · Terrain draws first, ribbon on top** (painter's, per design
+  doc). Consequence: a distant road section BEHIND a hill would draw over
+  it. Rarely visible with D-025 keeping hills off-line; a merged
+  depth-sort of terrain + ribbon quads is the fix if it ever grates.
+
+## Open (Stage 3)
+
+- **O-011 · Terrain look tuning**: hill amplitude, crater density, light
+  direction, palette are constants in terrain.py — tune by eye. Per-planet
+  terrain params can move into the planet JSON when planet #2 arrives.
+
+## Post-MVP intents (parked, not planned)
+
+- **P-001 · Portal transitions between tracks**: a checkpoint gate that
+  loads another track in realtime and tethers runs together. Cheap here:
+  craft state is ribbon-relative scalars (speed/lat/alt/vz), so momentum
+  carries by simply not resetting the craft; track load is a JSON read +
+  spline build (~ms). Editor grows ONE "split" action — sunder the loop
+  at a single point; the far end auto-becomes the start checkpoint. Open
+  (non-loop) tracks then exist, and the spline never branches mid-ribbon.
+- **P-002 · Obstacles**: fixed (avoid/jump), slow movers, and periodic
+  rival craft that inconsistently interfere — all spawning ahead of the
+  player (from the front), never behind. Jump finally gets its purpose
+  (see O-001).
+- **P-003 · More planets** = new planet JSON + terrain params + track
+  library entries. The content-multiplying payoff; post-MVP per Design.md.
+
+## MVP status
+
+Stages 0–3 all have their artifact: handling that's fun to tune, routes
+with clock + ghost, an editor that authors them, and a Moon to fly over.
+**The Design.md done-line — "one planet (Moon), one good authored route,
+looks like the Moon, drives well" — now rests on authoring + tuning, not
+engineering.**

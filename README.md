@@ -4,7 +4,14 @@ A branching-route time-attack antigrav racer — Outrun's route-and-fork
 structure, where each solar-system body is a distinct physics regime.
 Full design & staging: [Design.md](Design.md) · decision log: [Decisions.md](Decisions.md).
 
-## Current stage: 2 — the editor
+## Current stage: 3 — terrain (the MVP done-line)
+
+Low-poly Moon under the ribbon: noise hills + craters, slope-shaded,
+seeded per track (custom and random layouts get their own landscape).
+The corridor is pressed flat under the racing line so hills frame the
+road instead of eating it.
+
+## Stage 2 — the editor
 
 `python3 editor.py` — place/drag points top-down, drag heights (profile
 strip along the bottom), paint boost/low-grip spans, drop checkpoints.
@@ -65,6 +72,7 @@ Headless smoke test: `python3 main.py --smoke 300 [screenshot.png]`
 main.py    game loop; owns window/input/mode; wires craft+track+timer+render
 menu.py    stage select: library + RANDOM, race/zen toggle
 editor.py  standalone track editor -> data/tracks/custom.json (one slot)
+terrain.py heightfield data: noise + craters, corridor-clamped, per-track
 spline.py  Catmull-Rom + arc-length table; distance-based queries
 craft.py   handling model; ribbon-space state; reads planet profile
 planet.py  physics-profile data loader (data/planets/*.json)

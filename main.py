@@ -30,6 +30,7 @@ import menu
 from craft import Craft, TUNING
 from planet import Planet
 from render import Renderer
+from terrain import Terrain
 from timer import (RaceState, GhostRecorder, load_ghost, save_ghost_if_best,
                    RUNNING, FINISHED)
 from track import Track, random_track, SURFACE_FLAGS
@@ -54,6 +55,7 @@ def run(screen, track, zen, smoke_frames=0, shot_path=None):
     clock = pygame.time.Clock()
     planet = Planet.load(track.planet)
     renderer = Renderer(screen, planet, TUNING["ribbon_half_width"])
+    terrain = Terrain(track, planet)
     craft = Craft(track.spline, planet)
     is_random = track.file_name.startswith("random-")
 
@@ -127,7 +129,7 @@ def run(screen, track, zen, smoke_frames=0, shot_path=None):
                     ghost_pos = gp + gr * g_lat + gu * g_alt
 
         renderer.draw(track, craft, race, ghost_pos,
-                      ghost.total if ghost else None, zen)
+                      ghost.total if ghost else None, zen, terrain)
         pygame.display.flip()
 
         frame += 1
