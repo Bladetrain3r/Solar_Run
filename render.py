@@ -49,6 +49,21 @@ def fmt_time(t):
     return f"{int(m)}:{s:04.1f}"
 
 
+def _clip_near(poly, near):
+    """Sutherland-Hodgman clip of a camera-space polygon against z=near."""
+    out = []
+    for k in range(len(poly)):
+        a, b = poly[k], poly[(k + 1) % len(poly)]
+        a_in, b_in = a[2] >= near, b[2] >= near
+        if a_in:
+            out.append(a)
+        if a_in != b_in:
+            t = (near - a[2]) / (b[2] - a[2])
+            out.append((a[0] + t * (b[0] - a[0]),
+                        a[1] + t * (b[1] - a[1]), near))
+    return out
+
+
 class Renderer:
     def __init__(self, screen, planet, ribbon_half_width):
         self.screen = screen
@@ -148,39 +163,48 @@ class Renderer:
     def _draw_terrain(self, terrain, cam):
         """Low-poly heightfield, painter's algorithm. All vertices are
         projected in one numpy pass; only the per-cell polygon calls
-        loop in Python. Ribbon draws after (corridor is clamped under
-        it, so overdraw is the cheap and correct-enough order)."""
+        loop in Python. Cells straddling the near plane are CLIPPED
+        against it (not culled) — dropping them popped dark holes in
+        the ground right at the camera. Ribbon draws after (corridor
+        is clamped under it, so overdraw is the correct-enough order)."""
         cam_pos, r, u, f = cam
         ny, nx, _ = terrain.verts.shape
         D = terrain.verts.reshape(-1, 3) - cam_pos
-        z = D @ f
+        xx = (D @ r).reshape(ny, nx)
+        yy = (D @ u).reshape(ny, nx)
+        z = (D @ f).reshape(ny, nx)
         with np.errstate(divide="ignore", invalid="ignore"):
-            sx = self.cx + (D @ r) * self.focal / z
-            sy = self.cy - (D @ u) * self.focal / z
-        z = z.reshape(ny, nx)
-        sx, sy = sx.reshape(ny, nx), sy.reshape(ny, nx)
+            sx = self.cx + xx * self.focal / z
+            sy = self.cy - yy * self.focal / z
 
         C = terrain.cell_centers.reshape(-1, 3) - cam_pos
-        cz = C @ f
-        cx_lat = np.abs(C @ r)
-        vis = ((cz > NEAR_CLIP) & (cz < 1250.0)
-               & (cx_lat < cz * 1.35 + 150.0)).reshape(ny - 1, nx - 1)
-        # every corner must sit in front of the near plane
+        cz = (C @ f).reshape(ny - 1, nx - 1)
+        cx_lat = np.abs(C @ r).reshape(ny - 1, nx - 1)
         zin = z > NEAR_CLIP
-        vis &= zin[:-1, :-1] & zin[1:, :-1] & zin[:-1, 1:] & zin[1:, 1:]
+        corners_in = (zin[:-1, :-1].astype(int) + zin[1:, :-1]
+                      + zin[:-1, 1:] + zin[1:, 1:])
+        vis = ((corners_in > 0) & (cz < 1250.0)
+               & (cx_lat < np.maximum(cz, 0.0) * 1.35 + 160.0))
 
         iy, ix = np.nonzero(vis)
-        order = np.argsort(-cz.reshape(ny - 1, nx - 1)[iy, ix])
+        order = np.argsort(-cz[iy, ix])
         sky = self.planet.sky_color
         for k in order:
             i, j = int(iy[k]), int(ix[k])
-            fog = min(1.0, cz.reshape(ny - 1, nx - 1)[i, j] / 1250.0) * 0.92
+            fog = min(1.0, max(0.0, cz[i, j]) / 1250.0) * 0.92
             color = _lerp3(tuple(terrain.cell_colors[i, j]), sky, fog)
-            pygame.draw.polygon(self.screen, color,
-                                [(sx[i, j], sy[i, j]),
-                                 (sx[i, j + 1], sy[i, j + 1]),
-                                 (sx[i + 1, j + 1], sy[i + 1, j + 1]),
-                                 (sx[i + 1, j], sy[i + 1, j])])
+            idx = ((i, j), (i, j + 1), (i + 1, j + 1), (i + 1, j))
+            if corners_in[i, j] == 4:
+                pts = [(sx[a, b], sy[a, b]) for a, b in idx]
+            else:  # straddles the near plane: clip in camera space
+                poly = [(xx[a, b], yy[a, b], z[a, b]) for a, b in idx]
+                clipped = _clip_near(poly, NEAR_CLIP)
+                if len(clipped) < 3:
+                    continue
+                pts = [(self.cx + px * self.focal / pz,
+                        self.cy - py * self.focal / pz)
+                       for px, py, pz in clipped]
+            pygame.draw.polygon(self.screen, color, pts)
 
     def _draw_strip(self, samples, cam, odometer, scraping=False):
         """The ribbon, quad by quad from track samples, far to near."""
