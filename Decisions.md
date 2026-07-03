@@ -116,9 +116,32 @@ still open. Append entries; don't rewrite history — supersede it.
 - **O-008 · Random-track ghosts**: not persisted (each seed is
   one-off). Could persist per-seed with a seed picker later.
 
+## Decided (Stage 2)
+
+- **D-020 · Editor v1 scope held**: place / drag / height / flag /
+  checkpoint, ONE save slot (data/tracks/custom.json, gitignored —
+  player data). No undo, multi-track, copy-paste, or grid-snap. The
+  branch tool from Design.md dropped out with forks (D-019).
+- **D-021 · Editor is standalone** (`python3 editor.py`): it writes the
+  same track JSON the engine reads; the menu picks up custom.json
+  automatically. No editor<->engine runtime coupling — the file IS the
+  interface.
+- **D-022 · Flags are painted per span** (between adjacent control
+  points) in the editor, converted to frac ranges on save. Checkpoints
+  are dropped on the curve as fracs (bonus defaults to 15 — edit the
+  JSON for exact values, v1).
+- **D-023 · min-radius readout in the toolbar**, red below 25 m — the
+  author sees an unfair hairpin the moment they drag one into existence.
+
+## Open (Stage 2)
+
+- **O-009 · Checkpoint bonus editing in-editor** — v1 defaults 15s,
+  JSON-edit for exact numbers. Add only if it becomes a real friction.
+- **O-010 · Ghost-file hardening shipped** (unreadable ghost -> ignored,
+  atomic writes) after a one-off launch exception on Moon A-1 — likely a
+  fork-era ghost file with the old frame shape. Watch for recurrence.
+
 ## Next
 
-**Stage 2 — the editor**: place/drag control points top-down, side-view
-height, branch a node, paint surface flags, place checkpoints, ONE save
-slot. Scope guard per Design.md: NO undo, multi-track, copy-paste, or
-grid-snap in v1.
+**Stage 3 — terrain**: Moon heightmap (noise + craters) under the ribbon,
+simple shading. The MVP done-line.

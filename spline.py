@@ -93,6 +93,11 @@ class Spline:
         self._dists = np.concatenate([[0.0], np.cumsum(seg_lens)])
         self.length = float(self._dists[-1])
 
+    def param_dist(self, u):
+        """Arc distance at global parameter u (e.g. u=i -> distance of
+        control point i along the curve). Inverse of _u_at_dist."""
+        return float(np.interp(u, self._us, self._dists))
+
     def _u_at_dist(self, d):
         """Distance along curve -> global parameter, via table + lerp."""
         if self.closed:

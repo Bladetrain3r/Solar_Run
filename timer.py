@@ -74,13 +74,19 @@ def ghost_path(track_file_name):
 
 
 def load_ghost(track_file_name):
-    """Best saved run for this track, or None."""
+    """Best saved run for this track, or None. A ghost that fails to
+    parse or has the wrong shape (e.g. saved by an older build) is
+    ignored — a stale ghost must never crash a launch."""
     p = ghost_path(track_file_name)
     if not p.exists():
         return None
-    raw = json.loads(p.read_text())
-    return GhostPlayer(raw["times"], [tuple(f) for f in raw["frames"]],
-                       raw["total"])
+    try:
+        raw = json.loads(p.read_text())
+        frames = [(float(d), float(l), float(a)) for d, l, a in raw["frames"]]
+        return GhostPlayer(raw["times"], frames, float(raw["total"]))
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError):
+        print(f"ignoring unreadable ghost: {p.name}")
+        return None
 
 
 def save_ghost_if_best(track_file_name, recorder, total, current_best):
@@ -88,10 +94,13 @@ def save_ghost_if_best(track_file_name, recorder, total, current_best):
     if current_best is not None and total >= current_best.total:
         return False
     GHOST_DIR.mkdir(parents=True, exist_ok=True)
-    ghost_path(track_file_name).write_text(json.dumps({
+    p = ghost_path(track_file_name)
+    tmp = p.with_suffix(".tmp")  # atomic-ish: never leave a half-written ghost
+    tmp.write_text(json.dumps({
         "total": total,
         "times": [round(t, 4) for t in recorder.times],
         "frames": [[round(d, 2), round(l, 2), round(a, 2)]
                    for d, l, a in recorder.frames],
     }))
+    tmp.replace(p)
     return True
