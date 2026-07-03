@@ -273,14 +273,21 @@ class Renderer:
             pygame.draw.line(self.screen, color, pts["rb"], pts["rt"], w)
             pygame.draw.line(self.screen, color, pts["lt"], pts["rt"], w)
             if ckpt.finish:
-                mid_l = (pts["lt"][0], pts["lt"][1] + 3 * w)
-                mid_r = (pts["rt"][0], pts["rt"][1] + 3 * w)
-                pygame.draw.line(self.screen, color, mid_l, mid_r, w)
-            tx = (pts["lt"][0] + pts["rt"][0]) // 2
-            ty = min(pts["lt"][1], pts["rt"][1]) - 4 * w
-            pygame.draw.polygon(self.screen, color,
-                                [(tx, ty - 3 * w), (tx + 2 * w, ty),
-                                 (tx, ty + 3 * w), (tx - 2 * w, ty)])
+                # second beam sits 1.8 m below the top one IN WORLD SPACE
+                # (a pixel offset collapsed into a blob at distance)
+                l2 = self._project(pos - right * hw + up * (gh - 1.8), cam)
+                r2 = self._project(pos + right * hw + up * (gh - 1.8), cam)
+                if l2 and r2:
+                    pygame.draw.line(self.screen, color,
+                                     (l2[0], l2[1]), (r2[0], r2[1]), w)
+            dm = self._project(pos + up * (gh + 3.0), cam)
+            if dm:
+                s = min(28.0, 1.3 * self.focal / dm[2])
+                pygame.draw.polygon(self.screen, color,
+                                    [(dm[0], dm[1] - 1.5 * s),
+                                     (dm[0] + s, dm[1]),
+                                     (dm[0], dm[1] + 1.5 * s),
+                                     (dm[0] - s, dm[1])])
 
     def _draw_pod(self, world_pos, cam, alpha=255, roll=0.0, boosting=False,
                   grounded=True):

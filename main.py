@@ -20,6 +20,7 @@ Controls:
     Esc           back to menu / quit
 
 CLI:  --track NAME | --random [SEED] | --zen | --smoke N [shot.png]
+      --synth (or type "synthmoon" in the menu — you didn't hear it here)
 """
 
 import sys
@@ -50,10 +51,14 @@ def read_input(keys):
     return throttle, brake, steer, jump
 
 
-def run(screen, track, zen, smoke_frames=0, shot_path=None):
+def run(screen, track, zen, smoke_frames=0, shot_path=None, synth=False):
     """One session on one track. Returns False if the window was closed."""
     clock = pygame.time.Clock()
-    planet = Planet.load(track.planet)
+    # the synthmoon cheat: same physics, synthwave skin (planet-swap
+    # proof of concept — a "planet type" is just a different JSON)
+    planet_name = "synthmoon" if synth and track.planet == "moon" \
+        else track.planet
+    planet = Planet.load(planet_name)
     renderer = Renderer(screen, planet, TUNING["ribbon_half_width"])
     terrain = Terrain(track, planet)
     craft = Craft(track.spline, planet)
@@ -146,7 +151,8 @@ def run(screen, track, zen, smoke_frames=0, shot_path=None):
 def main():
     args = sys.argv[1:]
     zen = "--zen" in args
-    args = [a for a in args if a != "--zen"]
+    synth = "--synth" in args
+    args = [a for a in args if a not in ("--zen", "--synth")]
 
     track = None
     smoke_frames, shot_path = 0, None
@@ -172,11 +178,11 @@ def main():
     pygame.display.set_caption("Solar Run (Moon)")
 
     if track is not None:  # CLI-selected: single session, no menu loop
-        run(screen, track, zen, smoke_frames, shot_path)
+        run(screen, track, zen, smoke_frames, shot_path, synth)
     else:
         while True:
-            track, zen = menu.pick(screen)
-            if track is None or not run(screen, track, zen):
+            track, zen, synth = menu.pick(screen)
+            if track is None or not run(screen, track, zen, synth=synth):
                 break
 
     pygame.quit()

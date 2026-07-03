@@ -16,24 +16,36 @@ DIM = (110, 118, 130)
 ACCENT = (255, 176, 58)
 
 
+SYNTH = (230, 64, 220)
+
+
 def pick(screen):
-    """Returns (track, zen) — or (None, None) if the player quit."""
+    """Returns (track, zen, synth) — or (None, None, False) on quit.
+    synth flips when someone types the cheat code; it rides along so
+    main can swap the planet skin."""
     w, h = screen.get_size()
     font_title = pygame.font.Font(None, 96)
     font_item = pygame.font.Font(None, 44)
     font_hint = pygame.font.Font(None, 26)
     names = Track.list_available()
     entries = names + ["RANDOM"]
-    sel, zen = 0, False
+    sel, zen, synth = 0, False, False
+    typed = ""
     clock = pygame.time.Clock()
 
     while True:
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
-                return None, None
+                return None, None, False
             if ev.type == pygame.KEYDOWN:
+                ch = getattr(ev, "unicode", "").lower()
+                if ch.isalpha():
+                    typed = (typed + ch)[-12:]
+                    if typed.endswith("synthmoon"):
+                        synth = not synth
+                        typed = ""
                 if ev.key == pygame.K_ESCAPE:
-                    return None, None
+                    return None, None, False
                 elif ev.key in (pygame.K_UP, pygame.K_w):
                     sel = (sel - 1) % len(entries)
                 elif ev.key in (pygame.K_DOWN, pygame.K_s):
@@ -43,14 +55,15 @@ def pick(screen):
                 elif ev.key in (pygame.K_RETURN, pygame.K_SPACE):
                     if entries[sel] == "RANDOM":
                         seed = int(np.random.default_rng().integers(0, 99999))
-                        return random_track(seed), zen
-                    return Track.load(entries[sel]), zen
+                        return random_track(seed), zen, synth
+                    return Track.load(entries[sel]), zen, synth
 
-        screen.fill(BG)
-        title = font_title.render("SOLAR RUN", True, FG)
+        screen.fill((20, 8, 30) if synth else BG)
+        title = font_title.render("SOLAR RUN", True, SYNTH if synth else FG)
         screen.blit(title, (w // 2 - title.get_width() // 2, h // 5))
-        mode = font_item.render(f"MODE  {'ZEN' if zen else 'RACE'}",
-                                True, ACCENT)
+        mode = font_item.render(f"MODE  {'ZEN' if zen else 'RACE'}"
+                                + ("  ·  SYNTHMOON" if synth else ""),
+                                True, SYNTH if synth else ACCENT)
         screen.blit(mode, (w // 2 - mode.get_width() // 2, h // 5 + 110))
 
         y = h // 2

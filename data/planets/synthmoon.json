@@ -1,0 +1,9 @@
+{
+  "name": "Synthmoon",
+  "gravity": 13.0,
+  "drag": 0.0,
+  "grip": 1.0,
+  "sky_color": [14, 7, 26],
+  "ground_color": [205, 35, 195],
+  "accent_color": [64, 226, 255]
+}

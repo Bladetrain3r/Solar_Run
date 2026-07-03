@@ -163,6 +163,15 @@ still open. Append entries; don't rewrite history — supersede it.
   direction, palette are constants in terrain.py — tune by eye. Per-planet
   terrain params can move into the planet JSON when planet #2 arrives.
 
+## Decided (post-MVP polish)
+
+- **D-027 · Synthmoon**: type "synthmoon" in the menu (or `--synth`) to
+  skin Moon tracks in synthwave magenta/cyan. Born from a debugging
+  accident; kept as the cheap proof that a "planet type" is just a JSON —
+  data/planets/synthmoon.json is moon physics with a different palette,
+  and terrain/HUD/gates recolour themselves from it with zero code.
+  Planet #2-with-different-PHYSICS remains P-003.
+
 ## Post-MVP intents (parked, not planned)
 
 - **P-001 · Portal transitions between tracks**: a checkpoint gate that
