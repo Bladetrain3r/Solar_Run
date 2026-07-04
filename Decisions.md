@@ -203,15 +203,28 @@ still open. Append entries; don't rewrite history — supersede it.
   threshold, shove strengths — tune with real play. moon_a1=5,
   moon_b1=6, random scales with length (~1 per 450 m).
 
+## Decided (Stage 5 — portals & campaigns)
+
+- **D-033 · P-001 shipped (promoted ahead of planets)**: a campaign is
+  data/campaigns/<name>.json = {name, tracks[], bonus_scale}. The final
+  lap-gate of each leg is a portal: the next track loads in realtime
+  (~50 ms, one frame) and the craft is NOT reset — speed, lat, alt, vz,
+  even odometer stripe-phase carry through. Arrival credits the new
+  leg's start_time × bonus_scale to the clock.
+- **D-034 · Campaign runs have no ghost (v1)** — best TOTAL persists to
+  data/ghosts/tour_<name>.json instead. Cross-leg ghosts are a later
+  decision (O-013).
+- **D-035 · Zen + campaign = endless tour**: legs wrap around instead of
+  finishing. R now restarts the whole run (leg 1) via a restart
+  sentinel rather than in-place mutation.
+- Note: the editor "split" action from the original P-001 sketch wasn't
+  needed — closed loops work as campaign legs as-is (the lap line is the
+  portal). Open tracks remain possible later if a leg should not loop.
+
 ## Post-MVP intents (parked, not planned)
 
-- **P-001 · Portal transitions between tracks**: a checkpoint gate that
-  loads another track in realtime and tethers runs together. Cheap here:
-  craft state is ribbon-relative scalars (speed/lat/alt/vz), so momentum
-  carries by simply not resetting the craft; track load is a JSON read +
-  spline build (~ms). Editor grows ONE "split" action — sunder the loop
-  at a single point; the far end auto-becomes the start checkpoint. Open
-  (non-loop) tracks then exist, and the spline never branches mid-ribbon.
+- **O-013 · Cross-leg campaign ghosts** — record (leg, dist, lat, alt);
+  needs leg-aware replay. Do when campaign times get competitive.
 - **P-002 · Obstacles**: fixed (avoid/jump), slow movers, and periodic
   rival craft that inconsistently interfere — all spawning ahead of the
   player (from the front), never behind. Jump finally gets its purpose

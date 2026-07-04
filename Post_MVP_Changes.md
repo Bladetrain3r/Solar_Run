@@ -7,12 +7,13 @@ Now that the stage 3 MVP is done (see: Design.md), this file serves as a source 
 
 | Stage | Contents | Notes |
 |---|---|---|
-| 4 · Traffic | `objects.py` entities layer, slow movers (lane-stick, ~60% pace, `density` in track JSON), soft/hard collision, respawn-at-last-checkpoint | Respawn + entities are the shared foundations for stages 5 and 8; jump gets a job |
-| 5 · Placeables | Low walls + ditches, editor `6 OBJ` mode (defined list), random maps sprinkle 1–2 per checkpoint | Thin layer over stage 4's collision/respawn |
-| 6 · Planet framework | Terrain params → planet JSON; Mercury (lava lakes), Venus (fog), Mars (mountains), Pluto (trenches) + library tracks | Pure content multiplication |
-| 7 · Audio | OGG music dir + SFX + speed-banded engine hum (numpy resample; no live pitch in pygame — doppler parked) | Independent; can float earlier on request |
-| 8 · Weather | Per-planet event table, roll on checkpoint crossing (~10%), 3–10 s, HUD warning strip; cheap effects first (flare/fog), hazards reuse stages 4–5 | "Per segment" defined as per checkpoint crossing |
-| 9 · Exotic terrains | Jupiter cloud-tunnel render mode, Neptune ring asteroid-scatter mode, cryovolcanoes → Titania, Oberon, ring courses | The renderer-heavy tail, deliberately last |
+| 4 · Traffic ✅ | `objects.py` entities layer, slow movers (lane-stick, ~60% pace, `traffic` in track JSON), soft/hard collision, respawn-at-last-checkpoint | Respawn + entities are the shared foundations; jump got a job |
+| 5 · Portals & campaigns ✅ | Final gate of a leg = portal into the next track (realtime reload, momentum carried); campaign = JSON list of tracks; menu TOUR entries; zen tours loop forever | Moved up ahead of planets so track-to-track flow lands first |
+| 6 · Placeables | Low walls + ditches, editor `6 OBJ` mode (defined list), random maps sprinkle 1–2 per checkpoint | Thin layer over stage 4's collision/respawn |
+| 7 · Planet framework | Terrain params → planet JSON; Mercury (lava lakes), Venus (fog), Mars (mountains), Pluto (trenches) + library tracks + campaigns across them | Pure content multiplication |
+| 8 · Audio | OGG music dir + SFX + speed-banded engine hum (numpy resample; no live pitch in pygame — doppler parked) | Independent; can float earlier on request |
+| 9 · Weather | Per-planet event table, roll on checkpoint crossing (~10%), 3–10 s, HUD warning strip; cheap effects first (flare/fog), hazards reuse stages 4/6 | "Per segment" defined as per checkpoint crossing |
+| 10 · Exotic terrains | Jupiter cloud-tunnel render mode, Neptune ring asteroid-scatter mode, cryovolcanoes → Titania, Oberon, ring courses | The renderer-heavy tail, deliberately last |
 
 Planned split when render.py nears the 500-line ceiling (~stage 8): render.py
 keeps camera/projection/HUD, world drawing moves to render_world.py.
@@ -36,6 +37,10 @@ keeps camera/projection/HUD, world drawing moves to render_world.py.
 - Mover collision — stage 4
   - Soft: momentum trade + lateral shove; Hard (closing > ~100 km/h): NPC knocked out, player respawns at last gate crossed
   - Jump clears wheelers; a high-bobbing floater can be slipped under
+- Portal transitions + campaigns — stage 5 (P-001)
+  - data/campaigns/*.json = a named list of tracks; final gate of each leg reloads the next track in realtime with momentum carried (speed/lat/alt/vz + stripe phase)
+  - Arrival grants the leg's start_time × bonus_scale; STAGE x/y HUD; flash + banner
+  - Campaigns save best TOTAL (ghosts sit out campaigns v1); zen tours loop forever
 
 ## Wishlist (Features)
 - Audio Handling (OGG loading for music and FX)

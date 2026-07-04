@@ -116,7 +116,8 @@ class Renderer:
     # --- scene ---------------------------------------------------------------
 
     def draw(self, track, craft, race=None, ghost_pos=None,
-             best_total=None, zen=False, terrain=None, entities=None):
+             best_total=None, zen=False, terrain=None, entities=None,
+             stage=None, banner=None):
         cam = self._camera(track, craft)
         samples, gates = track.sample_ahead(craft.dist, DRAW_AHEAD)
         self._draw_sky(cam)
@@ -131,7 +132,19 @@ class Renderer:
             self._draw_pod(ghost_pos, cam, alpha=110)
         self._draw_craft(craft, cam)
         self.screen.blit(self.scanlines, (0, 0))
-        self._draw_hud(track, craft, race, best_total, zen)
+        self._draw_hud(track, craft, race, best_total, zen, stage)
+        if banner:
+            self._draw_banner(*banner)
+
+    def _draw_banner(self, text, a):
+        """Portal arrival: a fading white flash + the new stage's name."""
+        flash = pygame.Surface((self.w, self.h))
+        flash.fill((235, 240, 248))
+        flash.set_alpha(int(110 * a * a))
+        self.screen.blit(flash, (0, 0))
+        t = self.font_big.render(text, True, self.planet.accent_color)
+        t.set_alpha(int(255 * min(1.0, a * 3)))
+        self.screen.blit(t, (self.cx - t.get_width() // 2, self.h // 4))
 
     def _draw_sky(self, cam):
         _cam_pos, _r, _u, f = cam
@@ -371,7 +384,7 @@ class Renderer:
 
     # --- HUD -------------------------------------------------------------
 
-    def _draw_hud(self, track, craft, race, best_total, zen):
+    def _draw_hud(self, track, craft, race, best_total, zen, stage=None):
         kmh = int(craft.speed * 3.6)
         num = self.font_big.render(f"{kmh}", True, (235, 240, 246))
         self.screen.blit(num, (34, self.h - 150))
@@ -412,6 +425,8 @@ class Renderer:
                                      self.planet.accent_color)
         self.screen.blit(clock, (self.w - clock.get_width() - 36, 48))
         sub = f"TOTAL {fmt_time(race.total)}"
+        if stage is not None:
+            sub = f"STAGE {stage[0]}/{stage[1]} · " + sub
         if track.laps > 1:
             sub = f"LAP {min(race.lap, track.laps)}/{track.laps} · " + sub
         if best_total is not None:

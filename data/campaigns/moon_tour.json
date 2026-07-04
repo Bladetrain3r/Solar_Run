@@ -1,0 +1,5 @@
+{
+  "name": "Moon Tour",
+  "tracks": ["moon_a1", "moon_b1"],
+  "bonus_scale": 1.0
+}

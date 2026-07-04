@@ -21,6 +21,7 @@ import numpy as np
 from spline import Spline
 
 TRACK_DIR = Path(__file__).parent / "data" / "tracks"
+CAMPAIGN_DIR = Path(__file__).parent / "data" / "campaigns"
 
 # flag -> (grip multiplier, bonus accel m/s^2, road tint RGB or None)
 SURFACE_FLAGS = {
@@ -120,6 +121,24 @@ class Track:
                 pos, _f, right, up = self.spline.frame_at(c.dist)
                 gates.append((g, pos, right, up, c))
         return samples, gates
+
+
+def list_campaigns():
+    if not CAMPAIGN_DIR.exists():
+        return []
+    return sorted(p.stem for p in CAMPAIGN_DIR.glob("*.json"))
+
+
+def load_campaign(name):
+    """A campaign is just a list of tracks driven in sequence — the final
+    gate of each leg is a PORTAL into the next (momentum carries over)."""
+    raw = json.loads((CAMPAIGN_DIR / f"{name}.json").read_text())
+    return {
+        "file_name": name,
+        "name": raw.get("name", name),
+        "tracks": [Track.load(n) for n in raw["tracks"]],
+        "bonus_scale": raw.get("bonus_scale", 1.0),
+    }
 
 
 def random_track(seed=None, planet="moon"):

@@ -8,7 +8,7 @@ your layout before the run, not mid-ribbon.
 import numpy as np
 import pygame
 
-from track import Track, random_track
+from track import Track, random_track, list_campaigns, load_campaign
 
 BG = (11, 13, 18)
 FG = (203, 210, 220)
@@ -20,15 +20,18 @@ SYNTH = (230, 64, 220)
 
 
 def pick(screen):
-    """Returns (track, zen, synth) — or (None, None, False) on quit.
-    synth flips when someone types the cheat code; it rides along so
-    main can swap the planet skin."""
+    """Returns (selection, zen, synth) where selection is
+    ("track", Track) | ("campaign", campaign dict) — or (None, None,
+    False) on quit. synth flips when someone types the cheat code."""
     w, h = screen.get_size()
     font_title = pygame.font.Font(None, 96)
     font_item = pygame.font.Font(None, 44)
     font_hint = pygame.font.Font(None, 26)
     names = Track.list_available()
-    entries = names + ["RANDOM"]
+    tours = list_campaigns()
+    entries = ([("track", n) for n in names]
+               + [("campaign", n) for n in tours]
+               + [("random", None)])
     sel, zen, synth = 0, False, False
     typed = ""
     clock = pygame.time.Clock()
@@ -53,10 +56,13 @@ def pick(screen):
                 elif ev.key == pygame.K_z:
                     zen = not zen
                 elif ev.key in (pygame.K_RETURN, pygame.K_SPACE):
-                    if entries[sel] == "RANDOM":
+                    kind, name = entries[sel]
+                    if kind == "random":
                         seed = int(np.random.default_rng().integers(0, 99999))
-                        return random_track(seed), zen, synth
-                    return Track.load(entries[sel]), zen, synth
+                        return ("track", random_track(seed)), zen, synth
+                    if kind == "campaign":
+                        return ("campaign", load_campaign(name)), zen, synth
+                    return ("track", Track.load(name)), zen, synth
 
         screen.fill((20, 8, 30) if synth else BG)
         title = font_title.render("SOLAR RUN", True, SYNTH if synth else FG)
@@ -67,9 +73,12 @@ def pick(screen):
         screen.blit(mode, (w // 2 - mode.get_width() // 2, h // 5 + 110))
 
         y = h // 2
-        for i, name in enumerate(entries):
+        for i, (kind, name) in enumerate(entries):
             active = i == sel
-            label = ("· " + name + " ·") if active else name
+            label = {"random": "RANDOM",
+                     "campaign": f"TOUR · {name}"}.get(kind, name)
+            if active:
+                label = "· " + label + " ·"
             t = font_item.render(label.upper(), True, ACCENT if active else DIM)
             screen.blit(t, (w // 2 - t.get_width() // 2, y))
             y += 54

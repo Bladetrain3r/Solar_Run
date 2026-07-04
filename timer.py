@@ -89,6 +89,28 @@ def load_ghost(track_file_name):
         return None
 
 
+def load_best_total(campaign_file_name):
+    """Best campaign total (campaigns persist a time, not a ghost — v1)."""
+    p = GHOST_DIR / f"tour_{campaign_file_name}.json"
+    if not p.exists():
+        return None
+    try:
+        return float(json.loads(p.read_text())["total"])
+    except (ValueError, TypeError, KeyError, json.JSONDecodeError):
+        return None
+
+
+def save_best_total_if_best(campaign_file_name, total, current_best):
+    if current_best is not None and total >= current_best:
+        return False
+    GHOST_DIR.mkdir(parents=True, exist_ok=True)
+    p = GHOST_DIR / f"tour_{campaign_file_name}.json"
+    tmp = p.with_suffix(".tmp")
+    tmp.write_text(json.dumps({"total": round(total, 2)}))
+    tmp.replace(p)
+    return True
+
+
 def save_ghost_if_best(track_file_name, recorder, total, current_best):
     """Persist this run if it beats the loaded best. Returns True if saved."""
     if current_best is not None and total >= current_best.total:
