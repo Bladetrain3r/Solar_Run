@@ -30,7 +30,8 @@ TUNING = {
                               # fails to counter (1.0 = full physics)
     "air_steer": 0.35,        # steering authority multiplier while airborne
     "air_damp": 0.25,         # lateral damping multiplier while airborne
-    "jump_impulse": 4.5,      # m/s vertical kick
+    "jump_impulse": 7.0,      # m/s vertical kick — clears a 1.6m wheeler
+                              # (max height = impulse^2 / 2*gravity)
     "boost_lat_accel": 100.0, # m/s^2 (~10g) lateral kick, full power in air
     "boost_lat_time": 0.2,    # s, lateral boost burn
     "boost_fwd_accel": 260.0, # m/s^2 forward slam when boosting straight
@@ -67,6 +68,7 @@ class Craft:
         self.boost_cd = 0.0      # cooldown remaining
         self.boosting = False
         self.odometer = 0.0      # lifetime metres (render stripe phase)
+        self.invuln = 0.0        # s of post-respawn collision immunity
         self.surface_grip = 1.0  # multipliers from the segment's surface
         self.surface_accel = 0.0 # flag; set each frame by main from track
 
@@ -75,6 +77,8 @@ class Craft:
         jump held (only fires when grounded), boost edge-triggered
         (a Shift TAP, not hold)."""
         t = TUNING
+
+        self.invuln = max(0.0, self.invuln - dt)
 
         # --- boost: a thruster slam, direction locked at ignition ---
         self.boost_cd = max(0.0, self.boost_cd - dt)

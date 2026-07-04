@@ -52,6 +52,7 @@ class Track:
         self.planet = raw["planet"]
         self.start_time = raw.get("start_time", 45.0)
         self.laps = raw.get("laps", 1)
+        self.traffic = int(raw.get("traffic", 0))  # slow movers on load
         self.spline = Spline(raw["points"], closed=True)
         self.length = self.spline.length
         self.checkpoints = [Checkpoint(c["frac"] * self.length,
@@ -153,4 +154,5 @@ def random_track(seed=None, planet="moon"):
     }
     t = Track(raw, name=f"random-{seed}")
     t.start_time = round(t.length / 75.0 + 10.0)  # generous; tune later
+    t.traffic = min(9, max(3, int(t.length / 450)))
     return t

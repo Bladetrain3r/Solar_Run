@@ -29,6 +29,7 @@ import pygame
 
 import menu
 from craft import Craft, TUNING
+from objects import spawn_traffic, update_traffic, collide_player, TRAFFIC
 from planet import Planet
 from render import Renderer
 from terrain import Terrain
@@ -64,6 +65,11 @@ def run(screen, track, zen, smoke_frames=0, shot_path=None, synth=False):
     craft = Craft(track.spline, planet)
     is_random = track.file_name.startswith("random-")
 
+    pace = TRAFFIC["pace_frac"] * TUNING["thrust_accel"] / TUNING["base_damp"]
+    entities = spawn_traffic(track, track.traffic, pace)
+    respawn_dist = 0.0   # raw dist of the last gate crossed
+    respawns = 0
+
     race = None if zen else RaceState(track.start_time)
     ghost = None if (zen or is_random) else load_ghost(track.file_name)
     recorder = None if zen else GhostRecorder()
@@ -83,6 +89,8 @@ def run(screen, track, zen, smoke_frames=0, shot_path=None, synth=False):
                     return True  # back to menu
                 elif ev.key == pygame.K_r:
                     craft.reset()
+                    entities = spawn_traffic(track, track.traffic, pace)
+                    respawn_dist = 0.0
                     if not zen:
                         race = RaceState(track.start_time)
                         recorder = GhostRecorder()
@@ -109,6 +117,23 @@ def run(screen, track, zen, smoke_frames=0, shot_path=None, synth=False):
         craft.update(dt, throttle, brake, steer, jump, boost)
         events = track.advance(old_dist, craft.dist)
 
+        # traffic: movers advance, then collisions (skipped while invulnerable)
+        update_traffic(entities, track, pace, dt)
+        if craft.invuln <= 0.0:
+            hit = collide_player(entities, craft, track.length)
+            if hit == "hard":
+                craft.reset(respawn_dist)
+                craft.invuln = 2.0
+                respawns += 1
+
+        # the respawn point follows the last gate crossed (race OR zen)
+        for kind, data in events:
+            if kind == "checkpoint":
+                delta = (craft.dist % track.length - data.dist) % track.length
+                respawn_dist = craft.dist - delta
+            elif kind == "lap":
+                respawn_dist = data * track.length
+
         ghost_pos = None
         if race is not None:
             race.update(dt)
@@ -134,7 +159,7 @@ def run(screen, track, zen, smoke_frames=0, shot_path=None, synth=False):
                     ghost_pos = gp + gr * g_lat + gu * g_alt
 
         renderer.draw(track, craft, race, ghost_pos,
-                      ghost.total if ghost else None, zen, terrain)
+                      ghost.total if ghost else None, zen, terrain, entities)
         pygame.display.flip()
 
         frame += 1
@@ -142,9 +167,11 @@ def run(screen, track, zen, smoke_frames=0, shot_path=None, synth=False):
             if shot_path:
                 pygame.image.save(screen, shot_path)
             state = race.state if race else "zen"
+            alive = sum(e.alive for e in entities)
             print(f"smoke ok: {frame} frames | dist {craft.dist:.1f}m | "
                   f"speed {craft.speed * 3.6:.0f} km/h | "
-                  f"track {track.length:.0f}m | {state}")
+                  f"track {track.length:.0f}m | traffic {alive}/{len(entities)}"
+                  f" | respawns {respawns} | {state}")
             return False
 
 

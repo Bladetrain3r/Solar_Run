@@ -172,6 +172,37 @@ still open. Append entries; don't rewrite history — supersede it.
   and terrain/HUD/gates recolour themselves from it with zero code.
   Planet #2-with-different-PHYSICS remains P-003.
 
+## Decided (post-MVP planning)
+
+- **D-028 · Post-MVP build order agreed** — see Post_MVP_Changes.md:
+  4 Traffic → 5 Placeables → 6 Planet framework (Mercury/Venus/Mars/
+  Pluto) → 7 Audio (floatable) → 8 Weather → 9 Exotic terrains.
+  Two engineering seams (entities layer, terrain modes), one shared
+  mechanic built first (respawn); everything else is data.
+
+## Decided (Stage 4 — traffic)
+
+- **D-029 · One entities layer** (objects.py): everything on the ribbon
+  that isn't the player is an Entity at (dist, lat) with extents —
+  movers now, placeables and weather hazards later. Main owns the list;
+  craft never sees it; collisions resolve in ribbon space.
+- **D-030 · Collision rules**: closing speed below `hard_rv` (28 m/s)
+  = soft (momentum trade, lateral shove, both survive); above = NPC
+  knocked out, player respawns. Vertical extents count — jump clears a
+  wheeler, a high-bobbing floater can be slipped under.
+- **D-031 · Respawn = last gate crossed** (checkpoint or lap line),
+  2 s invulnerability with pod flicker, speed zeroed (the time loss IS
+  the penalty; the clock never stops). Works in zen too.
+- **D-032 · Traffic is deterministic per track** (seeded from the name):
+  same movers, same lanes, same pattern every run — time attack stays
+  fair and ghosts stay meaningful.
+- **O-001 · RESOLVED**: jump exists to clear traffic. jump_impulse
+  raised 4.5 → 7.0 (max hop 1.88 m vs wheeler 1.6 m). Retune to taste —
+  but keep max height above 1.6 or wheelers become walls.
+- **O-012 · Traffic dials** (objects.TRAFFIC): pace fraction, hard
+  threshold, shove strengths — tune with real play. moon_a1=5,
+  moon_b1=6, random scales with length (~1 per 450 m).
+
 ## Post-MVP intents (parked, not planned)
 
 - **P-001 · Portal transitions between tracks**: a checkpoint gate that

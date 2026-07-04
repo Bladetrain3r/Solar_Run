@@ -3,6 +3,20 @@
 
 Now that the stage 3 MVP is done (see: Design.md), this file serves as a source of truth for post-MVP changes
 
+## Build order (agreed; each stage leaves a playable artifact)
+
+| Stage | Contents | Notes |
+|---|---|---|
+| 4 · Traffic | `objects.py` entities layer, slow movers (lane-stick, ~60% pace, `density` in track JSON), soft/hard collision, respawn-at-last-checkpoint | Respawn + entities are the shared foundations for stages 5 and 8; jump gets a job |
+| 5 · Placeables | Low walls + ditches, editor `6 OBJ` mode (defined list), random maps sprinkle 1–2 per checkpoint | Thin layer over stage 4's collision/respawn |
+| 6 · Planet framework | Terrain params → planet JSON; Mercury (lava lakes), Venus (fog), Mars (mountains), Pluto (trenches) + library tracks | Pure content multiplication |
+| 7 · Audio | OGG music dir + SFX + speed-banded engine hum (numpy resample; no live pitch in pygame — doppler parked) | Independent; can float earlier on request |
+| 8 · Weather | Per-planet event table, roll on checkpoint crossing (~10%), 3–10 s, HUD warning strip; cheap effects first (flare/fog), hazards reuse stages 4–5 | "Per segment" defined as per checkpoint crossing |
+| 9 · Exotic terrains | Jupiter cloud-tunnel render mode, Neptune ring asteroid-scatter mode, cryovolcanoes → Titania, Oberon, ring courses | The renderer-heavy tail, deliberately last |
+
+Planned split when render.py nears the 500-line ceiling (~stage 8): render.py
+keeps camera/projection/HUD, world drawing moves to render_world.py.
+
 ## Wishlist (Planets)
 - Mercury
 - Venus
@@ -16,15 +30,16 @@ Now that the stage 3 MVP is done (see: Design.md), this file serves as a source 
 - Luna/Moon
 - Synthmoon
 
+## Completed (Features)
+- Slow Movers (wheeled and floater), moving about 60% of max player speed — stage 4
+  - Lane-stick, spawned on load per `traffic` density key in track JSON, deterministic per track
+- Mover collision — stage 4
+  - Soft: momentum trade + lateral shove; Hard (closing > ~100 km/h): NPC knocked out, player respawns at last gate crossed
+  - Jump clears wheelers; a high-bobbing floater can be slipped under
+
 ## Wishlist (Features)
 - Audio Handling (OGG loading for music and FX)
   - May need some filtering and doppler for engine state sound changes
-- Slow Movers (wheeled and floater), moving about 60% of max player speed
-  - These just stick to their lane
-  - Spawned on track load, distributed according to a density parameter in the track JSON (i.e. a value of 10 creates 10 slow movers equally distributed)
-- For movers: Collision
-  - Slow (relative) collisions just slow down both parties and transfer some momentum
-  - Hard collisions (high decel force) force the player to respawn, knock out the NPC
 - Static objects placeable in the editor
   - Defined list
   - Added class of placeable in the editor

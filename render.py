@@ -116,7 +116,7 @@ class Renderer:
     # --- scene ---------------------------------------------------------------
 
     def draw(self, track, craft, race=None, ghost_pos=None,
-             best_total=None, zen=False, terrain=None):
+             best_total=None, zen=False, terrain=None, entities=None):
         cam = self._camera(track, craft)
         samples, gates = track.sample_ahead(craft.dist, DRAW_AHEAD)
         self._draw_sky(cam)
@@ -125,6 +125,8 @@ class Renderer:
         self._draw_strip(samples, cam, craft.odometer,
                          scraping=craft.scraping)
         self._draw_gates(gates, cam)
+        if entities:
+            self._draw_entities(entities, track, craft, cam)
         if ghost_pos is not None:
             self._draw_pod(ghost_pos, cam, alpha=110)
         self._draw_craft(craft, cam)
@@ -289,6 +291,48 @@ class Renderer:
                                      (dm[0], dm[1] + 1.5 * s),
                                      (dm[0] - s, dm[1])])
 
+    def _draw_entities(self, entities, track, craft, cam):
+        """Slow movers, far-to-near. Wheelers are boxy carts; floaters
+        bob on a glow. Both are deliberately drab next to the hero pod."""
+        L = track.length
+        m = craft.dist % L
+        visible = []
+        for e in entities:
+            if not e.alive:
+                continue
+            rel = (e.dist - m) % L
+            if rel > DRAW_AHEAD and rel < L - 60.0:
+                continue
+            visible.append((rel if rel <= DRAW_AHEAD else rel - L, e))
+        for _rel, e in sorted(visible, key=lambda v: -v[0]):
+            pos, _f, right, up = track.spline.frame_at(e.dist)
+            ground = pos + right * e.lat
+            sp = self._project(ground, cam)
+            if sp:
+                size = max(4.0, e.half_w * 2.2 * self.focal / sp[2])
+                shadow = pygame.Surface((int(size), int(size * 0.4)),
+                                        pygame.SRCALPHA)
+                pygame.draw.ellipse(shadow, (0, 0, 0, 90), shadow.get_rect())
+                self.screen.blit(shadow, (sp[0] - size / 2, sp[1] - size * 0.2))
+            wp = self._project(ground + up * (e.alt + e.height * 0.5), cam)
+            if not wp:
+                continue
+            w_px = max(6, e.half_w * 2.0 * self.focal / wp[2])
+            surf = pygame.Surface((96, 52), pygame.SRCALPHA)
+            if e.kind == "wheeler":
+                pygame.draw.rect(surf, (96, 104, 96), (6, 10, 84, 30),
+                                 border_radius=6)
+                pygame.draw.rect(surf, (60, 68, 62), (26, 2, 44, 16),
+                                 border_radius=5)
+                for wx in (16, 48, 80):
+                    pygame.draw.circle(surf, (30, 32, 36), (wx, 44), 8)
+            else:
+                pygame.draw.ellipse(surf, (98, 122, 128), (10, 8, 76, 32))
+                pygame.draw.ellipse(surf, (54, 70, 76), (34, 14, 30, 12))
+                pygame.draw.ellipse(surf, (150, 210, 200), (26, 40, 44, 9))
+            sprite = pygame.transform.rotozoom(surf, 0, w_px / 96.0)
+            self.screen.blit(sprite, sprite.get_rect(center=(wp[0], wp[1])))
+
     def _draw_pod(self, world_pos, cam, alpha=255, roll=0.0, boosting=False,
                   grounded=True):
         wp = self._project(world_pos + WORLD_UP * 0.8, cam)
@@ -320,6 +364,8 @@ class Renderer:
             shadow = pygame.Surface((int(size), int(size * 0.4)), pygame.SRCALPHA)
             pygame.draw.ellipse(shadow, (0, 0, 0, fade), shadow.get_rect())
             self.screen.blit(shadow, (sp[0] - size / 2, sp[1] - size * 0.2))
+        if craft.invuln > 0 and int(craft.invuln * 14) % 2:
+            return  # post-respawn flicker
         self._draw_pod(craft.world_pos(), cam, roll=-craft.lat_vel * 0.9,
                        boosting=craft.boosting, grounded=craft.grounded)
 
@@ -339,6 +385,9 @@ class Renderer:
         if craft.scraping:
             warn = self.font_med.render("EDGE", True, RAIL_COLOR)
             self.screen.blit(warn, (self.cx - warn.get_width() // 2, self.h - 60))
+        if craft.invuln > 1.2:
+            msg = self.font_med.render("RESPAWNED", True, RAIL_COLOR)
+            self.screen.blit(msg, (self.cx - msg.get_width() // 2, self.cy - 140))
 
         # boost readiness, bottom-right
         charge = craft.boost_charge()
