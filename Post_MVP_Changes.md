@@ -40,6 +40,10 @@ keeps camera/projection/HUD, world drawing moves to render_world.py.
 ## Wishlist (Features)
 - Audio Handling (OGG loading for music and FX)
   - May need some filtering and doppler for engine state sound changes
+- Resolution scaling / fullscreen (post-everything-else; 720p windowed fine for dev)
+  - Game renderer + menu already derive from screen size, so likely just
+    a `--res WxH` flag + F11 fullscreen toggle; editor is the only
+    hardcoded-720p holdout
 - Static objects placeable in the editor
   - Defined list
   - Added class of placeable in the editor
