@@ -55,6 +55,10 @@ keeps camera/projection/HUD, world drawing moves to render_world.py.
   - Low walls and ditches to start
   - Random maps spawn one or two per checkpoint on track load
 - Screensaver mode: Load a track in zen mode, spawn a player object that acts like a slow mover, no HUD or active control.
+- Menu Options. Break it up into screens.
+  - Play -> Single Track or Tour -> Select (Random = Single Track).
+  - Options (Stub - resolution and fullscreen options)
+  - Exit
 
 ## Planet Base Visuals
 - Base planets each have different heightmap tuning
