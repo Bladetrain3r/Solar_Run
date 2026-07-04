@@ -54,6 +54,7 @@ keeps camera/projection/HUD, world drawing moves to render_world.py.
   - Added class of placeable in the editor
   - Low walls and ditches to start
   - Random maps spawn one or two per checkpoint on track load
+- Screensaver mode: Load a track in zen mode, attach a camera to one of the traffic entities, no HUD
 
 ## Planet Base Visuals
 - Base planets each have different heightmap tuning
