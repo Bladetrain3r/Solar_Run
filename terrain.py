@@ -109,6 +109,19 @@ class Terrain:
             level = float(np.percentile(natural,
                                         liq.get("fill", 0.15) * 100.0))
             Z = np.where(Z < level, level, Z)
+            # consolidate shorelines: a vertex sitting barely above the
+            # level with 2+ flooded neighbours gets pulled down too —
+            # otherwise terrain undulating around the level makes
+            # checkerboard lakes (alternating lava/rock cells)
+            for _ in range(2):
+                at = np.abs(Z - level) < 0.01
+                nb = np.zeros_like(Z)
+                nb[1:, :] += at[:-1, :]
+                nb[:-1, :] += at[1:, :]
+                nb[:, 1:] += at[:, :-1]
+                nb[:, :-1] += at[:, 1:]
+                pull = (~at) & (nb >= 2) & (Z < level + 2.5)
+                Z[pull] = level
             Z = np.minimum(Z, allowance)  # never above the road corridor
             self.liquid = liq
 
