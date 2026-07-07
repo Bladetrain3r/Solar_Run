@@ -213,10 +213,20 @@ class Renderer:
         iy, ix = np.nonzero(vis)
         order = np.argsort(-cz[iy, ix])
         sky = self.planet.sky_color
+        liquid = terrain.liquid is not None
+        t_now = pygame.time.get_ticks() * 0.001
         for k in order:
             i, j = int(iy[k]), int(ix[k])
             fog = min(1.0, max(0.0, cz[i, j]) / 1250.0) * 0.92
-            color = _lerp3(tuple(terrain.cell_colors[i, j]), sky, fog)
+            if liquid and terrain.lava_mask[i, j]:
+                pulse = 0.5 + 0.5 * math.sin(t_now * terrain.lava_speed
+                                             + terrain.lava_phase[i, j])
+                color = _lerp3(tuple(terrain.lava_c0[i, j]),
+                               tuple(terrain.lava_c1[i, j]), pulse)
+                fog *= 0.55  # molten = emissive; glows through the haze
+            else:
+                color = tuple(terrain.cell_colors[i, j])
+            color = _lerp3(color, sky, fog)
             idx = ((i, j), (i, j + 1), (i + 1, j + 1), (i + 1, j))
             if corners_in[i, j] == 4:
                 pts = [(sx[a, b], sy[a, b]) for a, b in idx]

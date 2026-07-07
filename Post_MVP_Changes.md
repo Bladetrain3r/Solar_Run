@@ -30,6 +30,7 @@ keeps camera/projection/HUD, world drawing moves to render_world.py.
 ## Completed (Planets)
 - Luna/Moon
 - Synthmoon
+- Mercury (lava lakes — `features`/`liquid`/`terrain` planet JSON keys; mercury_a1)
 
 ## Completed (Features)
 - Slow Movers (wheeled and floater), moving about 60% of max player speed — stage 4
@@ -59,6 +60,15 @@ keeps camera/projection/HUD, world drawing moves to render_world.py.
   - Play -> Single Track or Tour -> Select (Random = Single Track).
   - Options (Stub - resolution and fullscreen options)
   - Exit
+- Options submenu contents (planning): display resolution, fullscreen/windowed,
+  audio volumes (once audio exists), key mappings.
+- Skyboxes: per-planet sky color / star visibility / count of orbital objects
+  (like the little Earth in the Moon's sky — currently hardcoded).
+- Boost rework: TAP shift = forward boost (as now); HOLD shift = drain a boost
+  bar over time for sustained agility. Base values in craft.py TUNING +
+  per-planet multipliers (lorewise: extreme environments change boost behaviour).
+- Road surface type: "sticky" — colour green. (High grip, speed penalty? Tune
+  when added to SURFACE_FLAGS.)
 
 ## Planet Base Visuals
 - Base planets each have different heightmap tuning

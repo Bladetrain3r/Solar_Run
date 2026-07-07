@@ -232,6 +232,25 @@ still open. Append entries; don't rewrite history — supersede it.
   darken. All three are render.py dials; legibility scales with how
   steep tracks are AUTHORED — gentle grades still read gently.
 
+## Decided (Stage 7 — planet framework, Mercury first)
+
+- **D-037 · Planet JSON grows three optional keys** (all default to
+  Moon behaviour): "terrain" (hill_amp/craters/crater_r/corridor_blend
+  ranges), "features" (list of terrain-effect switches), "liquid"
+  (color/glow/opacity/fill/pulse_speed — generic for any liquid, not
+  just lava). Adding a planet is still purely a content task.
+- **D-038 · Liquids are flooded mesh, not a separate pass**: vertices
+  below the fill level (a percentile of the pre-corridor heightfield)
+  are raised TO it, so lakes are flat planes inside the existing
+  terrain geometry — same projection, same painter order. Lava cells
+  get pulsing colors in the renderer (per-cell phase + sin, emissive =
+  reduced fog); "opacity" composites liquid over the rock beneath in
+  colour space (true per-poly alpha is a pygame tax not worth paying).
+- **D-039 · corridor_blend is the drama dial**: how fast terrain (and
+  liquids) may rise beside the road. Moon 200 m (open vistas), Mercury
+  80 m (canyons, lava crowding the line). Clearance clamp still wins —
+  lava can never rise above road level minus 3 m.
+
 ## Post-MVP intents (parked, not planned)
 
 - **O-013 · Cross-leg campaign ghosts** — record (leg, dist, lat, alt);

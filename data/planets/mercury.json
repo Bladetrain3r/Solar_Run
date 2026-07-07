@@ -1,0 +1,23 @@
+{
+  "name": "Mercury",
+  "gravity": 15.0,
+  "drag": 0.0,
+  "grip": 1.05,
+  "sky_color": [20, 10, 9],
+  "ground_color": [52, 38, 33],
+  "accent_color": [255, 140, 64],
+  "features": ["lava_lakes"],
+  "liquid": {
+    "color": [235, 78, 20],
+    "glow": [255, 190, 60],
+    "opacity": 0.88,
+    "fill": 0.24,
+    "pulse_speed": 1.6
+  },
+  "terrain": {
+    "hill_amp": [20, 32],
+    "craters": [26, 42],
+    "crater_r": [0.02, 0.07],
+    "corridor_blend": 80
+  }
+}
