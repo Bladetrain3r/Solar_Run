@@ -20,8 +20,14 @@ from track import SURFACE_FLAGS
 
 # Camera + projection dials
 CAM_BACK = 16.0        # m behind the craft along the track
-CAM_HEIGHT = 7.0       # m above the ribbon
+CAM_HEIGHT = 5.0       # m above the ribbon (lower = slopes read stronger)
 CAM_AHEAD = 40.0       # m ahead of the craft to aim at
+PITCH_FOLLOW = 0.10    # how much camera pitch tracks the road's slope.
+                       # 1.0 = aim at the road ahead (hills flatten out on
+                       # screen and never read); 0 = dead level. Low values
+                       # make rises climb the screen and dips fall away.
+SLOPE_SHADE = 2.2      # road brightness gain per unit slope (uphill faces
+                       # the camera = brighter, downhill = darker)
 FOCAL_HFOV = 80.0      # degrees, horizontal field of view
 NEAR_CLIP = 2.0        # m
 DRAW_AHEAD = 420.0     # m of ribbon drawn ahead of the craft
@@ -95,8 +101,11 @@ class Renderer:
         pos, _f, right, _u = track.spline.frame_at(craft.dist - CAM_BACK)
         self.cam_lat += (craft.lat * 0.45 - self.cam_lat) * 0.12
         cam_pos = pos + right * self.cam_lat + WORLD_UP * CAM_HEIGHT
-        f = (track.spline.pos_at(craft.dist + CAM_AHEAD)
-             + WORLD_UP * 2.0) - cam_pos
+        # aim mostly LEVEL (relative to the local ground), not at the road
+        # ahead — a pitch-following camera cancels hills out of the image
+        target = track.spline.pos_at(craft.dist + CAM_AHEAD).copy()
+        target[2] = pos[2] + 2.0 + PITCH_FOLLOW * (target[2] - pos[2])
+        f = target - cam_pos
         f = f / np.linalg.norm(f)
         r = np.cross(f, WORLD_UP)
         r = r / np.linalg.norm(r)
@@ -230,6 +239,10 @@ class Renderer:
             pr = self._project(pos + right * hw, cam)
             edges.append((d_off, pl, pr, flag) if pl and pr else None)
 
+        # world z per sample, for slope shading (uphill faces the camera)
+        zs = [s[1][2] for s in samples]
+        ds = [s[0] for s in samples]
+
         for i in range(len(edges) - 2, -1, -1):
             a, b = edges[i], edges[i + 1]
             if a is None or b is None:
@@ -243,6 +256,13 @@ class Renderer:
             tint = SURFACE_FLAGS[flag][2]
             if tint:
                 base = _lerp3(base, tint, 0.45)
+            span = ds[i + 1] - ds[i]
+            if span > 0:
+                slope = (zs[i + 1] - zs[i]) / span
+                lit = min(1.35, max(0.7, 1.0 + SLOPE_SHADE * slope))
+                base = (min(255, int(base[0] * lit)),
+                        min(255, int(base[1] * lit)),
+                        min(255, int(base[2] * lit)))
             quad = [(al[0], al[1]), (ar[0], ar[1]), (br[0], br[1]), (bl[0], bl[1])]
             pygame.draw.polygon(self.screen,
                                 _lerp3(base, self.planet.sky_color, fog), quad)

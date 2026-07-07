@@ -221,6 +221,17 @@ still open. Append entries; don't rewrite history — supersede it.
   needed — closed loops work as campaign legs as-is (the lap line is the
   portal). Open tracks remain possible later if a leg should not loop.
 
+## Decided (slope legibility)
+
+- **D-036 · The camera barely pitches** (PITCH_FOLLOW 0.10) and sits
+  lower (CAM_HEIGHT 7 → 5). A pitch-following camera cancels hills out
+  of the image — the road stayed screen-flat and dips were invisible
+  until airborne. Near-level camera = rises climb the screen, dips fall
+  away, crests occlude the road behind them. Plus slope shading
+  (SLOPE_SHADE): uphill quads face the camera and brighten, downhill
+  darken. All three are render.py dials; legibility scales with how
+  steep tracks are AUTHORED — gentle grades still read gently.
+
 ## Post-MVP intents (parked, not planned)
 
 - **O-013 · Cross-leg campaign ghosts** — record (leg, dist, lat, alt);
