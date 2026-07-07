@@ -104,24 +104,26 @@ class Terrain:
         # vertices TO the level — the lake IS the mesh, drawn flat
         self.liquid = None
         level = None
+        flooded = None
         if "lava_lakes" in planet.features and planet.liquid:
             liq = planet.liquid
             level = float(np.percentile(natural,
                                         liq.get("fill", 0.15) * 100.0))
-            Z = np.where(Z < level, level, Z)
-            # consolidate shorelines: a vertex sitting barely above the
-            # level with 2+ flooded neighbours gets pulled down too —
-            # otherwise terrain undulating around the level makes
-            # checkerboard lakes (alternating lava/rock cells)
+            # decide what's flooded on the NATURAL terrain, before any
+            # corridor clamping — tying the mask to final z made mixed
+            # patchy cells wherever the clamp warped the lake surface.
+            flooded = natural < level
+            # consolidate shorelines: verts barely above the level with
+            # 2+ flooded neighbours flood too (kills checkerboards on
+            # ground that undulates around the level)
             for _ in range(2):
-                at = np.abs(Z - level) < 0.01
-                nb = np.zeros_like(Z)
-                nb[1:, :] += at[:-1, :]
-                nb[:-1, :] += at[1:, :]
-                nb[:, 1:] += at[:, :-1]
-                nb[:, :-1] += at[:, 1:]
-                pull = (~at) & (nb >= 2) & (Z < level + 2.5)
-                Z[pull] = level
+                nb = np.zeros(flooded.shape)
+                nb[1:, :] += flooded[:-1, :]
+                nb[:-1, :] += flooded[1:, :]
+                nb[:, 1:] += flooded[:, :-1]
+                nb[:, :-1] += flooded[:, 1:]
+                flooded |= (~flooded) & (nb >= 2) & (natural < level + 2.5)
+            Z = np.where(flooded, level, Z)
             Z = np.minimum(Z, allowance)  # never above the road corridor
             self.liquid = liq
 
@@ -144,10 +146,8 @@ class Terrain:
                                     + self.verts[:-1, 1:] + self.verts[1:, 1:])
 
         if self.liquid is not None:
-            eps = 0.01
-            at = np.abs(Z - level) < eps
-            self.lava_mask = (at[:-1, :-1] & at[1:, :-1]
-                              & at[:-1, 1:] & at[1:, 1:])
+            self.lava_mask = (flooded[:-1, :-1] & flooded[1:, :-1]
+                              & flooded[:-1, 1:] & flooded[1:, 1:])
             op = float(self.liquid.get("opacity", 0.85))
             c = np.asarray(self.liquid.get("color", [255, 96, 24]), float)
             g = np.asarray(self.liquid.get("glow", c), float)
