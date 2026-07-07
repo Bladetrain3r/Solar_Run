@@ -251,6 +251,15 @@ still open. Append entries; don't rewrite history — supersede it.
   80 m (canyons, lava crowding the line). Clearance clamp still wins —
   lava can never rise above road level minus 3 m.
 
+## Decided (menu v1)
+
+- **D-040 · Menu split into screens** per the wishlist spec: MAIN (Play/
+  Options/Exit) -> PLAY (Solo Track / Tour) -> pick lists; RANDOM lives
+  under solo; Esc backs up a level; Z and the cheat work on any screen.
+  Options is a labelled stub until resolution/audio/keys land.
+  RANDOM-picks-a-random-planet intentionally left for Ziggy
+  (Planet.list_available() + random_track(seed, planet=...) are ready).
+
 ## Post-MVP intents (parked, not planned)
 
 - **O-013 · Cross-leg campaign ghosts** — record (leg, dist, lat, alt);

@@ -34,7 +34,7 @@ races alongside you next time.
 
 ```
 pip install -r requirements.txt
-python3 main.py                    # stage-select menu
+python3 main.py                    # menu: Play (Solo Track / Tour) · Options · Exit
 python3 main.py --track moon_b1    # straight into a track
 python3 main.py --random 42        # generated layout (seeded)
 python3 main.py --zen --random     # zen on a fresh random loop

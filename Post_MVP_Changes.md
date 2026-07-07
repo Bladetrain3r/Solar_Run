@@ -42,6 +42,8 @@ keeps camera/projection/HUD, world drawing moves to render_world.py.
   - data/campaigns/*.json = a named list of tracks; final gate of each leg reloads the next track in realtime with momentum carried (speed/lat/alt/vz + stripe phase)
   - Arrival grants the leg's start_time × bonus_scale; STAGE x/y HUD; flash + banner
   - Campaigns save best TOTAL (ghosts sit out campaigns v1); zen tours loop forever
+- Menu screens v1: MAIN (Play / Options / Exit) -> PLAY (Solo Track / Tour) ->
+  pick lists; RANDOM under solo; Options is a stub; Esc backs up a level
 
 ## Wishlist (Features)
 - Audio Handling (OGG loading for music and FX)
@@ -56,10 +58,10 @@ keeps camera/projection/HUD, world drawing moves to render_world.py.
   - Low walls and ditches to start
   - Random maps spawn one or two per checkpoint on track load
 - Screensaver mode: Load a track in zen mode, spawn a player object that acts like a slow mover, no HUD or active control.
-- Menu Options. Break it up into screens.
-  - Play -> Single Track or Tour -> Select (Random = Single Track).
-  - Options (Stub - resolution and fullscreen options)
-  - Exit
+- Edge feathering on liquid pools — soften the chunky lava/rock shoreline
+  cells (blend colour toward rock at lake edges?). Livable as-is, not urgent.
+- RANDOM picks a random planet type (list planet JSONs + random.choice;
+  `random_track(seed, planet=...)` and `planet.list_planets()` are ready).
 - Options submenu contents (planning): display resolution, fullscreen/windowed,
   audio volumes (once audio exists), key mappings.
 - Skyboxes: per-planet sky color / star visibility / count of orbital objects

@@ -34,6 +34,10 @@ class Planet:
     terrain: dict = field(default_factory=dict)  # heightmap tuning
 
     @classmethod
+    def list_available(cls):
+        return sorted(p.stem for p in PLANET_DIR.glob("*.json"))
+
+    @classmethod
     def load(cls, name):
         raw = json.loads((PLANET_DIR / f"{name}.json").read_text())
         return cls(
